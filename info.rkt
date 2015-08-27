@@ -4,11 +4,9 @@
 
 (define version 0.5)
 
-(define deps '("base" "htdp-lib"
-               ))
+(define deps '("base" "htdp-lib"))
 
 (define build-deps '("scribble-lib"
-                     "scribble-doc"
-                     ))
+                     "scribble-doc"))
 
-(define scribblings '(["doc/racket_turtle.scrbl" 'multi-page]))
+(define scribblings '(("doc/racket_turtle.scrbl" (multi-page))))
