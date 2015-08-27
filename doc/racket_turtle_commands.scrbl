@@ -18,7 +18,7 @@
 @title[#:tag "racket_turtle_commands" #:style 'toc]{Commands for Racket Turtle}
 
 @(begin
-   (require scribble/manual scribble/eval fin-doc/sl-eval)
+   (require scribble/manual scribble/eval "sl-eval.rkt")
    (define (bsl)
      (define *bsl
        (bsl+-eval

@@ -16,7 +16,7 @@
 @title[#:tag "racket_turtle_examples"]{Racket Turtle examples}
 
 @(begin
-   (require scribble/manual scribble/eval fin-doc/sl-eval)
+   (require scribble/manual scribble/eval "sl-eval.rkt")
    (define (bsl)
     (define *bsl
        (bsl+-eval

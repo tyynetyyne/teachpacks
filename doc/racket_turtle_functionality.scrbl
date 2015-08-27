@@ -15,7 +15,7 @@
 @title[#:tag "racket_turtlen_functionality"]{Racket Turtle Principles}
 
 @(begin
-   (require scribble/manual scribble/eval fin-doc/sl-eval)
+   (require scribble/manual scribble/eval "sl-eval.rkt")
    (define (bsl)
      (define *bsl
        (bsl+-eval
