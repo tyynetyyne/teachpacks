@@ -10,7 +10,7 @@
 @(require (for-label teachpacks/racket-turtle))
 @(require scribble/core
           scribble/html-properties)
-@(require scribble/eval)
+@;@(require scribble/eval)
 @(require scribble/pdf-render)
 
 @declare-exporting[teachpacks/racket-turtle]

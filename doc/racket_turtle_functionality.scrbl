@@ -8,23 +8,11 @@
 @(require (for-label teachpacks/racket-turtle))
 @(require scribble/core
           scribble/html-properties)
-@(require scribble/eval)
+@;@(require scribble/eval)
 
 @declare-exporting[teachpacks/racket-turtle]
 
 @title[#:tag "racket_turtlen_functionality"]{Racket Turtle Principles}
-
-@(begin
-   (require scribble/manual scribble/eval "sl-eval.rkt")
-   (define (bsl)
-     (define *bsl
-       (bsl+-eval
-        (require 2htdp/image)
-        (require teachpacks/racket-turtle)
-        (define line1 (list (forward 100)))
-        ))
-     (set! bsl (lambda () *bsl))
-     *bsl))
 
 With Racket Turtle - library you can draw traditional turtle-graphics by ordering @italic{turtle} (black triangle)
 to move forward, to turn left, to lift its pen up, to put it down etc. In addition to this you can draw stamps in the
@@ -50,6 +38,8 @@ Defining a command list @italic{line1} for drawing the line (in definitions wind
 @racketblock[(define line1 (list (forward 100)))]
 
 Calling the drawing function @italic{draw} with @italic{line1} as the argument (in interactions window):
-@interaction[#:eval (bsl)(draw line1)]
+@;@interaction[#:eval (bsl)(draw line1)]
+@racketblock[(draw line1)]
+@image["racket_turtle_pict.png"]
 
 All Racket Turtle commands and drawing functions are presented in the following chapters.

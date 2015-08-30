@@ -8,12 +8,14 @@
 @(require (for-label teachpacks/racket-turtle))
 @(require scribble/core
            scribble/html-properties)
-@(require scribble/eval)
+@;@(require scribble/eval)
 @(require scribble/pdf-render)
 
 @title[#:tag "racket_turtle" #:style 'toc]{Racket Turtle}
 
 @defmodule[teachpacks/racket-turtle]
+
+@margin-note{In @italic{WeScheme} use @racket[(require wescheme/Engb0r37Kg)]}
 
 Racket Turtle - library provides a simple interface for drawing traditional turtle-graphics. Racket Turtle
 has also a stamper functionality, so its images are not limited to line drawings.
