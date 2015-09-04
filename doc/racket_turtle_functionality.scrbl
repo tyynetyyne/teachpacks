@@ -2,7 +2,7 @@
 
 @(require scriblib/figure)
 @(require 2htdp/image)
-@(require teachpacks/racket-turtle)
+@;@(require teachpacks/racket-turtle)
 @(require (for-label lang/htdp-beginner))
 @(require (for-label (except-in 2htdp/image image?)))
 @(require (for-label teachpacks/racket-turtle))
