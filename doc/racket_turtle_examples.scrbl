@@ -31,7 +31,7 @@ to @racket[draw].
 
 @;@interaction[#:eval (bsl)(draw square1)]
 @racketblock[(draw square1)]
-@image["racket_turtle_pict_2.png"]
+@image["doc/racket_turtle_pict_2.png"]
 
 @section[#:tag "racket_turtle_square_with_repeat"]{Drawing a square using repeat}
 
@@ -46,7 +46,7 @@ and use it repeatedly. We will name it @italic{side} and we will repeat it 4 tim
 
 @;@interaction[#:eval (bsl)(draw repeat-square)]
 @racketblock[(draw repeat-square)]
-@image["racket_turtle_pict_3.png"]
+@image["doc/racket_turtle_pict_3.png"]
 
 @section[#:tag "racket_turtle_two_squares"]{Drawing two squares in a same picture}
 
@@ -67,7 +67,7 @@ commands @italic{move} to move to a new location and changes the pen color befor
 
 @;@interaction[#:eval (bsl) (draw two-squares)]
 @racketblock[(draw two-squares)]
-@image["racket_turtle_pict_4.png"]
+@image["doc/racket_turtle_pict_4.png"]
 
 @section[#:tag "racket_turtle_square_using_function"]{Drawing a square using a function}
 
@@ -85,7 +85,7 @@ with argument 30 (@italic{x=30}).
              
 @;@interaction[#:eval (bsl)(draw (changing-square 30))]
 @racketblock[(draw (changing-square 30))]
-@image["racket_turtle_pict_5.png"]
+@image["doc/racket_turtle_pict_5.png"]
 
 @section[#:tag "racket_turtle_coordinate_square"]{Drawing a square using coordinates}
 
@@ -102,7 +102,7 @@ commands. To get easier coordinates we change the place of the origin with @rack
 
 @;@interaction[#:eval (bsl) (draw coordinate-square)]
 @racketblock[(draw coordinate-square)]
-@image["racket_turtle_pict_6.png"]
+@image["doc/racket_turtle_pict_6.png"]
 
 @section[#:tag "racket_turtle_mirroring_square"]{Mirroring a square}
 
@@ -117,7 +117,7 @@ in this example it is the starting point.
 
 @;@interaction[#:eval (bsl)(draw mirroring-square)]
 @racketblock[(draw mirroring-square)]
-@image["racket_turtle_pict_7.png"]
+@image["doc/racket_turtle_pict_7.png"]
 
 @section[#:tag "racket_turtle_square_with_stamper"]{Drawing a square using a stamper}
 
@@ -136,7 +136,7 @@ taken up).
 
 @;@interaction[#:eval (bsl)(draw stamper-square)]
 @racketblock[(draw stamper-square)]
-@image["racket_turtle_pict_8.png"]
+@image["doc/racket_turtle_pict_8.png"]
 
 @section[#:tag "racket_turtle_changing_pen_style_and_size"]{Changing pen style and size}
 
@@ -153,7 +153,7 @@ You can change the style of the line using @racket[change-pen-style] command and
 
 @;@interaction[#:eval (bsl)(draw special-pen-square)]
 @racketblock[(draw speacial-pen-square)]
-@image["racket_turtle_pict_9.png"]
+@image["doc/racket_turtle_pict_9.png"]
 
 @section[#:tag "racket_turtle_drawing_line_with_grid"]{Drawing a line in a grid}
 
@@ -177,7 +177,7 @@ command the turtle using @racket[go-to] multiple times. In this example the stam
 
 @;@interaction[#:eval (bsl)(draw line-with-grid)]
 @racketblock[(draw line-with-grid)]
-@image["racket_turtle_pict_10.png"]
+@image["doc/racket_turtle_pict_10.png"]
 
 @section[#:tag "racket_turtle_multiple_stamps"]{Drawing a line with multiple stamps}
 
@@ -201,7 +201,7 @@ We move to origin using @racket[go-to-origin] command and draw a line using a li
 
 @;@interaction[#:eval (bsl)(draw line-with-stamps)]
 @racketblock[(draw line-with-stamps)]
-@image["racket_turtle_pict_11.png"]
+@image["doc/racket_turtle_pict_11.png"]
 
 @section[#:tag "racket_turtle_square_over_bg_image"]{Changing background color, background image and animation size}
 
@@ -217,7 +217,7 @@ it using @racket[set-bg-image]. In the example we want to draw a picture with di
 
 @;@interaction[#:eval (bsl)(draw-custom square-over-bg 400 250 0)]
 @racketblock[(draw square-over-bg 400 250 0)]
-@image["racket_turtle_pict_12.png"]
+@image["doc/racket_turtle_pict_12.png"]
 
 @section[#:tag "racket_turtle_color_line"]{A line with changing colors}
 
@@ -244,4 +244,4 @@ the first part of the animation.
 
 @;@interaction[#:eval (bsl)(draw-custom color-line 500 500 0.5)]
 @racketblock[(draw-custom color-line 500 500 0.5)]
-@image["racket_turtle_pict_13.png"]
+@image["doc/racket_turtle_pict_13.png"]

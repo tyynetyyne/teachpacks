@@ -20,7 +20,7 @@ turtle positions, mirror turtle's movements vertically and horizontally or order
 via some specific coordinates. You can make your images more interesting by changing the color of the pen, the width
 and type of the line, also the background color and image can be set to your preferences.
 
-@centered[@image[#:scale 0.8 "turtle1.png"]]
+@centered[@image[#:scale 0.8 "doc/turtle1.png"]]
 
 To give orders to turtle you need to create a list of turtle commands. This list is given as an argument to a drawing
 function, which reads the commands and draws the image. By selecting a different drawing function, you can change the
@@ -40,6 +40,6 @@ Defining a command list @italic{line1} for drawing the line (in definitions wind
 Calling the drawing function @italic{draw} with @italic{line1} as the argument (in interactions window):
 @;@interaction[#:eval (bsl)(draw line1)]
 @racketblock[(draw line1)]
-@image["racket_turtle_pict.png"]
+@image["doc/racket_turtle_pict.png"]
 
 All Racket Turtle commands and drawing functions are presented in the following chapters.

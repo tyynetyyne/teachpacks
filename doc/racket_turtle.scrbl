@@ -24,10 +24,10 @@ but it can also be used to teach more advanced programming concepts such as list
 
 Images drawn with Racket Turtle:
 
-@image[#:scale 0.5 "racket_turtle1_img.png"]
-@image[#:scale 0.5 "racket_turtle2_img.png"]
-@image[#:scale 0.5 "racket_turtle3_img.png"]
-@image[#:scale 0.5 "racket_turtle4_img.png"]
+@image[#:scale 0.5 "doc/racket_turtle1_img.png"]
+@image[#:scale 0.5 "doc/racket_turtle2_img.png"]
+@image[#:scale 0.5 "doc/racket_turtle3_img.png"]
+@image[#:scale 0.5 "doc/racket_turtle4_img.png"]
                                                                            
 @local-table-of-contents[#:style 'unnumbered]
 

@@ -36,7 +36,7 @@ of colors.
 
 @;@interaction[#:eval (bsl) (draw spiral-image)]
 @racketblock[(draw spiral-image)]
-@image["racket_turtle2_img.png"]
+@image["doc/racket_turtle2_img.png"]
 
 @section[#:tag "racket_turtle_spiral2"]{Spiral with changing pen color and size}
 
@@ -61,7 +61,7 @@ of colors and pen size increases each time.
 
 @;@interaction[#:eval (bsl)(draw spiral-image2)]
 @racketblock[(draw spiral-image2)]
-@image["racket_turtle1_img.png"]
+@image["doc/racket_turtle1_img.png"]
 
 @section[#:tag "racket_turtle_flower_spiral"]{Flower spiral with changing sizes and colors}
 
@@ -100,7 +100,7 @@ Flower spiral programmed using the stamper functionality. The colors of the flow
 
 @;@interaction[#:eval (bsl)(draw spiral-image3)]
 @racketblock[(draw spiral-image3)]
-@image["racket_turtle3_img.png"]
+@image["doc/racket_turtle3_img.png"]
 
 @section[#:tag "racket_turtle_star_spiral"]{Star spiral with changing sizes and colors}
 
@@ -120,4 +120,4 @@ Star spiral programmed using the stamper functionality. The colors of the stars 
 
 @;@interaction[#:eval (bsl)(draw spiral-image4)]
 @racketblock[(draw spiral-image4)]
-@image["racket_turtle4_img.png"]
+@image["doc/racket_turtle4_img.png"]
