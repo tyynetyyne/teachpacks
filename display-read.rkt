@@ -11,7 +11,8 @@
 (require 2htdp/universe)
 (require "big-crunch.rkt")
 
-(provide display-read)
+(provide display-read
+         display)
 
 (define BUFFER-SIZE 30)
 (define TEXT-X 8)    
@@ -77,8 +78,9 @@
 ;; - editor (Editor), editor struct containing buffer and cursor info
 ;; - img (Image), user provided image to be displayed in the UI window
 ;; - active? (Boolean), when #true window is displayed, when set to #false window closes
+;; - display-mode? (Boolean), when #true no editor shown
 
-(define W1 (make-window (make-editor "" 0 0) (circle 100 "solid" "red") #t))
+(define W1 (make-window (make-editor "" 0 0) (circle 100 "solid" "red") #t)) ; normal window with image and empty editor
 
 #;
 (define (fn-for-window w)
@@ -95,6 +97,14 @@
   (editor-textbuf (window-editor (big-bang/big-crunch (make-window (make-editor "" 0 0) img #t)                       
                                              (to-draw render-whole)      
                                              (on-key handle-key-whole)
+                                             (stop-when stop?)))))
+
+;; display : Image -> String
+;; a function for displaying user provided image and opening editor for user input
+(define (display img)
+  (editor-textbuf (window-editor (big-bang/big-crunch (make-window (make-editor "" 0 0) img #t)                       
+                                             (to-draw render-img)      
+                                             (on-key handle-key-img)
                                              (stop-when stop?)))))
 
 ;; stop? : Window -> Boolean
@@ -121,14 +131,19 @@
 (define (fit-image img)
   (scale (/ (- WIDTH (* 2 MARGIN)) (image-width img)) img))
 
-;; render-whole : Window -> Window
+;; render-whole : Window -> Image
 ;; render the editor and image in the window
 (define (render-whole w)
-  (above MARGIN-IMG
-         (fit-image (window-img w))
-         MARGIN-IMG
+  (above (render-img w)
          (render (window-editor w))))
   
+;; render-img : Window -> Image
+;; render the editor and image in the window
+(define (render-img w)
+  (above MARGIN-IMG
+         (fit-image (window-img w))
+         MARGIN-IMG))
+
 ;; Helper-functions:
 ;; =================
 ;; cut-left-side : Editor -> String
@@ -198,6 +213,14 @@
          (make-window (handle-key (window-editor w) k)
                       (window-img w)
                       (window-active? w))]))
+
+;; handle-key-img : Window Key -> Window
+;; checks if return/enter has been pressed
+
+(define (handle-key-img w k)
+  (cond [(key=? k "\r")
+         (make-window (window-editor w) (window-img w) #f)]
+        [else w]))
 
 ;; helper functions:
 ;; =================
