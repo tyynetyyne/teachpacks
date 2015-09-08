@@ -1,7 +1,7 @@
 ;; Display-read-utility
 ;; =================
-;; displays one image and shows a text editor, returns the string stored in the text buffer when
-;; user presses <enter> 
+;; display-read displays one image and shows a text editor, returns the string entered in the text buffer
+;; display-no-read displays one image but shows no text editor, returns empty string
 ;; You can move coursor with arrowkeys and delete characters with backspace-key 
 ;; The editor shows (BUFFER-SIZE - 1) characters at the time, but the textbuffer can contain a lot more
 ;; =================
@@ -12,7 +12,7 @@
 (require "big-crunch.rkt")
 
 (provide display-read
-         display)
+         display-no-read)
 
 (define BUFFER-SIZE 30)
 (define TEXT-X 8)    
@@ -99,9 +99,9 @@
                                              (on-key handle-key-whole)
                                              (stop-when stop?)))))
 
-;; display : Image -> String
+;; display-no-read : Image -> String
 ;; a function for displaying user provided image and opening editor for user input
-(define (display img)
+(define (display-no-read img)
   (editor-textbuf (window-editor (big-bang/big-crunch (make-window (make-editor "" 0 0) img #t)                       
                                              (to-draw render-img)      
                                              (on-key handle-key-img)
