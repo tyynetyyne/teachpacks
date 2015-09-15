@@ -113,9 +113,18 @@
       (cond [(< (+ (string-length c-line)(string-length (first word-list))) line-length)
              (merge-words word-list-ok (rest word-list) (string-append c-line (first word-list) " ") line-length)]
             [(> (string-length (first word-list)) line-length)
-             (merge-words (append word-list-ok (list (substring (first word-list) 0 (sub1 line-length))))
-                          (cons (substring (first word-list) (sub1 line-length)(rest word-list)))
-                          line-length)]
+             (if (= (string-length c-line) 0)
+                 (merge-words (append word-list-ok (list (substring (first word-list) 0 (sub1 line-length))))
+                              (cons (substring (first word-list) (sub1 line-length))(rest word-list))
+                              c-line
+                              line-length)
+                 (merge-words (append word-list-ok
+                                      (list c-line)
+                                      (list (substring (first word-list) 0 (sub1 line-length))))
+                              (cons (substring (first word-list) (sub1 line-length))(rest word-list))
+                              ""
+                              line-length))
+                 ]
             [else
              (merge-words (append word-list-ok (list c-line)) word-list "" line-length)])))
 
@@ -183,7 +192,9 @@
 ;; fit-image : Image -> Image
 ;; scales the user image to fit match the editor width
 (define (fit-image img)
-  (scale (/ (- WIDTH (* 2 MARGIN)) (image-width img)) img))
+  (if (not (= 0 (image-width img)))
+      (scale (/ (- WIDTH (* 2 MARGIN)) (image-width img)) img)
+      img))
 
 ;; render-whole : Window -> Image
 ;; render the editor and image in the window
