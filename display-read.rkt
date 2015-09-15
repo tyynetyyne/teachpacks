@@ -17,8 +17,15 @@
 (define BUFFER-SIZE 30)
 (define TEXT-X 8)    
 
+;; default color and size for the text editor field
 (define COLOR "blue")
 (define SIZE 20)
+
+;; default color and size for the text user wants to display
+;; default line-lenght for the displayed string
+(define TEXT-SIZE 30)
+(define TEXT-COLOR "black")
+(define LINE-LENGTH 30)
 
 ;; String -> Image
 ;; converts a string into an image (defines font, size, color and style)
@@ -91,18 +98,65 @@
 ;; =================
 ;; Functions:
 
-;; display-read : Image -> String
-;; a function for displaying user provided image and opening editor for user input
-(define (display-read img)
-  (editor-textbuf (window-editor (big-bang/big-crunch (make-window (make-editor "" 0 0) img #t)                       
-                                             (to-draw render-whole)      
-                                             (on-key handle-key-whole)
-                                             (stop-when stop?)))))
+;; print-text : String Number -> Image
+;; splits the given string into list of strings and calls merge-words
+(define (print-text text line-length)
+  (text->image (merge-words '() (string-split text) "" line-length)
+               line-length
+               empty-image))
 
-;; display-no-read : Image -> String
+;; merge-words : list-of-Strings list-of-Strings String Number -> list-of-Strings
+;; combines words into lines
+(define (merge-words word-list-ok word-list c-line line-length)
+  (if (empty? word-list)
+      (append word-list-ok (list c-line))
+      (cond [(< (+ (string-length c-line)(string-length (first word-list))) line-length)
+             (merge-words word-list-ok (rest word-list) (string-append c-line (first word-list) " ") line-length)]
+            [(> (string-length (first word-list)) line-length)
+             (merge-words (append word-list-ok (list (substring (first word-list) 0 (sub1 line-length))))
+                          (cons (substring (first word-list) (sub1 line-length)(rest word-list)))
+                          line-length)]
+            [else
+             (merge-words (append word-list-ok (list c-line)) word-list "" line-length)])))
+
+;; text->image : list-of-Strings Number Image -> Image
+;; converts a list of line strings into one image
+(define (text->image lines line-length image)
+  (cond [(empty? lines)
+         image]
+        [(string? (first lines)) ;(<= (add1 line-length) (string-length (first lines))))
+         (text->image (rest lines)
+                      line-length
+                      (above/align "left" image (text (first lines) TEXT-SIZE TEXT-COLOR)))]
+        [ else
+          (text->image (rest lines)
+                       line-length
+                       (above/align "left" image empty-image))]))
+
+;; item->image : Any -> Image
+(define (item->image item)
+  (cond [(number? item)
+         (print-text (number->string item) LINE-LENGTH)]
+        [(string? item)
+         (print-text item LINE-LENGTH)]
+        [(image? item)
+         item]
+        [else
+         empty-image]))
+         
+
+;; display-read : Image or String or Number -> String
 ;; a function for displaying user provided image and opening editor for user input
-(define (display-no-read img)
-  (editor-textbuf (window-editor (big-bang/big-crunch (make-window (make-editor "" 0 0) img #t)                       
+(define (display-read item)
+         (editor-textbuf (window-editor (big-bang/big-crunch (make-window (make-editor "" 0 0) (item->image item) #t)                       
+                                                             (to-draw render-whole)      
+                                                             (on-key handle-key-whole)
+                                                             (stop-when stop?)))))
+
+;; display-no-read :  Image or String or Number -> String
+;; a function for displaying user provided image and opening editor for user input
+(define (display-no-read item)
+  (editor-textbuf (window-editor (big-bang/big-crunch (make-window (make-editor "" 0 0) (item->image item) #t)                       
                                              (to-draw render-img)      
                                              (on-key handle-key-img)
                                              (stop-when stop?)))))
@@ -321,4 +375,4 @@
 ;; checks if the key that was pressed is a single character
 
 (define (displayable-character? k)
-  (= (string-length k) 1))
+         (= (string-length k) 1))
