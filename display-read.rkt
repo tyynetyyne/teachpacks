@@ -1,4 +1,4 @@
-;; Display-read-utility
+;; Display-read-utility v.0.5
 ;; =================
 ;; display-read displays one image and shows a text editor, returns the string entered in the text buffer
 ;; display-no-read displays one image but shows no text editor, returns empty string
