@@ -6,13 +6,18 @@
 ;; The editor shows (BUFFER-SIZE - 1) characters at the time, but the textbuffer can contain a lot more
 ;; =================
 ;; Constants:
-#lang racket
-(require 2htdp/image)
-(require 2htdp/universe)
-(require "big-crunch.rkt")
+#lang racket                         ; comment out in WeScheme
+(require 2htdp/image)                ; comment out in WeScheme
+(require 2htdp/universe)             ; comment out in WeScheme
+(require "big-crunch.rkt")           ; comment out in WeScheme
 
 (provide display-read
-         display-no-read)
+         display-no-read
+         ; empty-image               ;needed in WeScheme
+         )
+
+;; needed in WeScheme:
+;(define empty-image (rectangle 0 0 0 "white"))
 
 (define BUFFER-SIZE 30)
 (define TEXT-X 8)    
@@ -27,7 +32,7 @@
 (define TEXT-COLOR "black")
 (define LINE-LENGTH 30)
 
-;; String -> Image
+;; render-text : String -> Image
 ;; converts a string into an image (defines font, size, color and style)
 (define (render-text s)
   (text/font s SIZE COLOR "Courier New" 'modern 'normal 'normal #f))
@@ -97,6 +102,28 @@
 
 ;; =================
 ;; Functions:
+
+;; string-split : String -> list-of-String
+;; NOTE: needed in WeScheme (comment out in DrRacket)
+;(define (string-split str)
+;  (rec-string-split '() "" str))
+
+;; rec-string-split : list-of-String String String -> list-of-string
+;; splitting a string into a list of strings at each whitespace
+;; NOTE: needed in WeScheme (comment out in DrRacket)
+;(define (rec-string-split str-list curstr str)
+;      (cond [(and (<= (string-length str) 0)
+;                  (not (<= (string-length curstr) 0)))
+;             (append str-list (list curstr))]
+;            [(<= (string-length str) 0)
+;             str-list]
+;            [(and (string=? (substring str 0 1) " ")
+;                  (> (string-length curstr) 0))
+;             (rec-string-split (append str-list (list curstr)) "" (substring str 1))]
+;            [(string=? (substring str 0 1) " ")
+;             (rec-string-split str-list curstr (substring str 1))]
+;            [else
+;             (rec-string-split str-list (string-append curstr (substring str 0 1)) (substring str 1))]))
 
 ;; print-text : String Number -> Image
 ;; splits the given string into list of strings and calls merge-words
@@ -190,11 +217,13 @@
                      MTS))
 
 ;; fit-image : Image -> Image
-;; scales the user image to fit match the editor width
+;; scales the user image to fit the editor width
 (define (fit-image img)
-  (if (not (= 0 (image-width img)))
-      (scale (/ (- WIDTH (* 2 MARGIN)) (image-width img)) img)
-      img))
+  (cond [(= 0 (image-width img))
+         img]
+        [(> (image-width img) WIDTH)
+         (scale (/ (- WIDTH (* 2 MARGIN)) (image-width img)) img)]
+        [else img]))
 
 ;; render-whole : Window -> Image
 ;; render the editor and image in the window
