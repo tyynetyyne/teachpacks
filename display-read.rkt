@@ -1,9 +1,12 @@
-;; Display-read-utility v.0.5
+;; Display-read-utility v.0.6
 ;; =================
-;; display-read displays one image and shows a text editor, returns the string entered in the text buffer
-;; display-no-read displays one image but shows no text editor, returns empty string
-;; You can move coursor with arrowkeys and delete characters with backspace-key 
-;; The editor shows (BUFFER-SIZE - 1) characters at the time, but the textbuffer can contain a lot more
+;; display-read displays one image/string/number and shows a text editor, returns the string entered in the text buffer
+;; display-no-read displays one image/string/number but shows no text editor, returns empty string
+;; display-select displays one image/string/number and selection for the user, the selection can be a list of images, strings or numbers
+;;        or a single image/string/number/boolean (in which case it gets selected automatically)
+;; You can move coursor and selector with arrowkeys and delete characters with backspace-key
+;; Enter returns the editor contents or the selection
+
 ;; =================
 ;; Constants:
 #lang racket                         ; comment out in WeScheme
@@ -13,7 +16,8 @@
 
 (provide display-read
          display-no-read
-         ; empty-image               ;needed in WeScheme
+         display-select
+       ; empty-image                 ;needed in WeScheme
          )
 
 ;; needed in WeScheme:
@@ -31,6 +35,7 @@
 (define TEXT-SIZE 30)
 (define TEXT-COLOR "black")
 (define LINE-LENGTH 30)
+(define SELECTOR-COLOR "red")
 
 ;; render-text : String -> Image
 ;; converts a string into an image (defines font, size, color and style)
@@ -48,7 +53,7 @@
 
 (define MARGIN 15)
 
-(define MARGIN-IMG (rectangle WIDTH MARGIN "solid" "white"))
+(define MARGIN-IMG (rectangle WIDTH MARGIN 0 "white"))
 
 ;; =================
 ;; Data definitions:
@@ -99,6 +104,16 @@
   (... (window-editor w)     ;Editor
        (window-img w)        ;Image
        (window-active? w)))   ;Boolean
+
+(define-struct selector (choises selected img active?))
+;; Selector is (make-selector Selection Image Boolean)
+;; interp. stores UI window state:
+;; - choises (Selection), items to be selected by user
+;; - selected (Number), index of the currently selected item, default is 0
+;; - img (Image), user provided image to be displayed in the UI window
+;; - active? (Boolean), when #true window is displayed, when set to #false window closes
+
+(define MS1 (make-selector "OK" 0 (circle 100 "solid" "red") #t)) ; selector with one text choise
 
 ;; =================
 ;; Functions:
@@ -155,6 +170,12 @@
             [else
              (merge-words (append word-list-ok (list c-line)) word-list "" line-length)])))
 
+;; strip-whitespace : String -> String
+(define (strip-whitespace s)
+  (if (string=? " " (substring s (- (string-length s) 1)))
+      (substring s 0 (- (string-length s) 1))
+      s))
+
 ;; text->image : list-of-Strings Number Image -> Image
 ;; converts a list of line strings into one image
 (define (text->image lines line-length image)
@@ -163,7 +184,7 @@
         [(string? (first lines)) ;(<= (add1 line-length) (string-length (first lines))))
          (text->image (rest lines)
                       line-length
-                      (above/align "left" image (text (first lines) TEXT-SIZE TEXT-COLOR)))]
+                      (above/align "left" image (text (strip-whitespace (first lines)) TEXT-SIZE TEXT-COLOR)))]
         [ else
           (text->image (rest lines)
                        line-length
@@ -180,27 +201,51 @@
         [else
          empty-image]))
          
+;; selected-item : Selector -> Image/String/Number/Boolean or empty (= valinta ei onnistunut)
+(define (selected-item s)
+  (cond [(or (string? (selector-choises s))
+             (number? (selector-choises s))
+             (image? (selector-choises s))
+             (boolean? (selector-choises s)))
+         (selector-choises s)]
+        [(and (cons? (selector-choises s))(not (empty? s))(< (selector-selected s)(length (selector-choises s))))
+         (list-ref  (selector-choises s) (selector-selected s))]
+        [else empty]))
 
 ;; display-read : Image or String or Number -> String
 ;; a function for displaying user provided image and opening editor for user input
 (define (display-read item)
          (editor-textbuf (window-editor (big-bang/big-crunch (make-window (make-editor "" 0 0) (item->image item) #t)                       
-                                                             (to-draw render-whole)      
-                                                             (on-key handle-key-whole)
+                                                             (to-draw render-window)      
+                                                             (on-key handle-key-window)
                                                              (stop-when stop?)))))
 
 ;; display-no-read :  Image or String or Number -> String
 ;; a function for displaying user provided image and opening editor for user input
 (define (display-no-read item)
   (editor-textbuf (window-editor (big-bang/big-crunch (make-window (make-editor "" 0 0) (item->image item) #t)                       
-                                             (to-draw render-img)      
-                                             (on-key handle-key-img)
+                                             (to-draw render-just-image)      
+                                             (on-key handle-key-just-image)
                                              (stop-when stop?)))))
 
-;; stop? : Window -> Boolean
+
+;; display-select :  Image/String/Number Image/String/Number/List-of-Images/List-of-Strings/List-of-Numbers -> Image/String/Number
+;; a function for displaying user provided image, string or number with additional selection "buttons" 
+(define (display-select item selections)
+  (selected-item (big-bang/big-crunch (make-selector selections 0 (item->image item) #t)                       
+                                      (to-draw render-selector)      
+                                      (on-key handle-key-selector)
+                                      (stop-when stop?))))
+
+;; stop? : Window/Selector -> Boolean
 ;; tests if the window should be closed
-(define (stop? w)
-  (not (window-active? w)))
+(define (stop? a)
+  (cond [(window? a)
+         (not (window-active? a))]
+        [(selector? a)
+         (not (selector-active? a))]
+        [else
+         #f]))
 
 ;; =================
 ;; render : Editor -> Image
@@ -225,18 +270,76 @@
          (scale (/ (- WIDTH (* 2 MARGIN)) (image-width img)) img)]
         [else img]))
 
-;; render-whole : Window -> Image
+;; render-window : Window -> Image
 ;; render the editor and image in the window
-(define (render-whole w)
-  (above (render-img w)
+(define (render-window w)
+  (above (render-img (window-img w))
          (render (window-editor w))))
-  
-;; render-img : Window -> Image
-;; render the editor and image in the window
-(define (render-img w)
-  (above MARGIN-IMG
-         (fit-image (window-img w))
-         MARGIN-IMG))
+
+;; render-just-image : Window/Selector -> Image
+;; render the just image in the window/selector
+(define (render-just-image a)
+  (cond [(window? a)
+         (render-img (window-img a))]
+        [(selector? a)
+         (render-img (selector-img a))]
+        [else
+         empty-image]))
+
+;; render-img : Image -> Image
+;; render the image in the window
+(define (render-img img)
+  (cond [(> (image-width img) 0)
+         (above MARGIN-IMG
+                (fit-image img)
+                MARGIN-IMG)]
+        [else
+         MARGIN-IMG]))
+
+;; render-selected : Image -> Image
+(define (render-selected img)
+  (overlay (rectangle (image-width img)(image-height img) "outline" SELECTOR-COLOR)
+           img))
+
+;; render-selections-rec : List-of-Choises -> List-of-Images
+(define (render-selections-rec c-list rendered selected round)
+  (cond [(empty? c-list)
+         rendered]
+        [(= selected round)
+         (render-selections-rec (rest c-list)
+                                (append rendered (list (render-selected (item->image (first c-list)))))
+                                selected
+                                (add1 round))]
+        [else
+         (render-selections-rec (rest c-list)
+                                (append rendered (list (item->image (first c-list))))
+                                selected
+                                (add1 round))]))
+                  
+;; render-selections : Choice Number -> Image/List-of-Images
+(define (render-selections c selected)
+  (cond [(or (string? c)(number? c))
+         (item->image c)]
+        [(image? c)
+         (render-img c)]
+        [(cons? c)
+         (render-selections-rec c empty selected 0)]
+        [else
+         empty-image]))
+
+;; render-images : Image/List-of-Images -> Image
+(define (render-images img)
+  (cond [(cons? img)
+         (foldr above empty-image img)]
+        [(image? img)
+         img]
+        [else
+         empty-image]))
+
+;; render-selector : Selector -> Image
+(define (render-selector s)
+  (above (render-img (selector-img s))
+         (render-images (render-selections (selector-choises s) (selector-selected s))))) 
 
 ;; Helper-functions:
 ;; =================
@@ -297,10 +400,10 @@
          (add-to-buffer e k)]
         [else e]))
 
-;; handle-key-whole : Window Key -> Window
+;; handle-key-window : Window Key -> Window
 ;; checks if return/enter has been pressed
 
-(define (handle-key-whole w k)
+(define (handle-key-window w k)
   (cond [(key=? k "\r")
          (make-window (window-editor w) (window-img w) #f)]
         [else
@@ -308,13 +411,35 @@
                       (window-img w)
                       (window-active? w))]))
 
-;; handle-key-img : Window Key -> Window
+;; handle-key-just-image : Window/Selector Key -> Window
 ;; checks if return/enter has been pressed
 
-(define (handle-key-img w k)
+(define (handle-key-just-image a k)
+  (cond [(and (window? a)(key=? k "\r"))
+         (make-window (window-editor a) (window-img a) #f)]
+        [(and (selector? a)(key=? k "\r"))
+         (make-selector (selector-choises a) (selector-selected a) (selector-img a) #f)]
+        [else a]))
+
+;; add : Number List Number -> Number
+(define (add x list index)
+  (cond [(<= 0 (+ index x) (sub1 (length list)))
+         (+ index x)]
+        [else index]))
+
+;; handle-key-selector : Selector Key -> Selector
+;; checks if return/enter has been pressed
+
+(define (handle-key-selector s k)
   (cond [(key=? k "\r")
-         (make-window (window-editor w) (window-img w) #f)]
-        [else w]))
+         (make-selector (selector-choises s) (selector-selected s) (selector-img s) #f)]
+        [(and (cons? (selector-choises s))(key=? k "down"))
+         (make-selector (selector-choises s) (add 1 (selector-choises s)(selector-selected s)) (selector-img s) (selector-active? s))]
+        [(and (cons? (selector-choises s))(key=? k "up"))
+         (make-selector (selector-choises s) (add -1 (selector-choises s)(selector-selected s)) (selector-img s) (selector-active? s))]
+        [else
+         s]))
+
 
 ;; helper functions:
 ;; =================
