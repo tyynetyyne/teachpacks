@@ -1,9 +1,10 @@
 ;; ---------------------------------------------------------------------------------------------------
-;; Racket-Turtle 0.5
+;; Racket-Turtle 0.6
 ;; 
 ;; - animated turtle for drawing geometric shapes
 ;; - instructions for using this module can be found in turtle_examples.rkt (English) and 
 ;;   turtle_esimerkit.rkt (Finnish)
+;; - added reset-angle (0.6)
 ;; 
 ;; Tiina Partanen
 ;; ---------------------------------------------------------------------------------------------------
@@ -35,6 +36,7 @@
          clean-up
          hide-turtle
          show-turtle
+         reset-angle
          draw 
          draw-custom
          draw-and-store                 ;; WeScheme doesn't support this (comment out in WeScheme)
@@ -95,7 +97,7 @@
 
 ;; get-x : Animation -> Number
 (define (get-x anim)
- (position-x (turtle-location (animation-location anim))))
+  (position-x (turtle-location (animation-location anim))))
 
 ;; get-y : Animation -> Number
 (define (get-y anim)
@@ -103,7 +105,7 @@
 
 ;; get-origin-x : Animation -> Number
 (define (get-origin-x anim)
- (position-x (animation-origin anim)))
+  (position-x (animation-origin anim)))
 
 ;; get-origin-y : Animation -> Number
 (define (get-origin-y anim)
@@ -111,7 +113,7 @@
 
 ;; get-height : Animation -> Number
 (define (get-height anim)
- (image-height (animation-image anim)))
+  (image-height (animation-image anim)))
 
 ;; get-width : Animation -> Number
 (define (get-width anim)
@@ -138,7 +140,7 @@
               (not (empty? (animation-color anim))))
          (first (animation-color anim))]
         [else "black"]))
-        
+
 ;; ---------------------------------------------------------------------------------------------------
 ;; Getters for Turtle:
 ;; t-get-x : Turtle -> Number
@@ -174,16 +176,16 @@
 ;; draw-vertical-lines : Number Position Image Color -> Image
 (define (draw-vertical-lines x-step orig img color)
   (letrec ((start-x (modulo (position-x orig) x-step))
-            (times (round (/ (image-width img) x-step)))
-            (steps (map (lambda (x) (+ start-x (* x x-step))) (map sub1 (build-list times add1)))))
-        (foldl (lambda (x i) (draw-vertical-line x i color)) img steps)))
+           (times (round (/ (image-width img) x-step)))
+           (steps (map (lambda (x) (+ start-x (* x x-step))) (map sub1 (build-list times add1)))))
+    (foldl (lambda (x i) (draw-vertical-line x i color)) img steps)))
 
 ;; draw-horizontal-lines : Number Position Image Color -> Image
 (define (draw-horizontal-lines y-step orig img color)
   (letrec ((start-y (modulo (position-y orig) y-step))
-            (times (round (/ (image-height img) y-step)))
-            (steps (map (lambda (y) (+ start-y (* y y-step))) (map sub1 (build-list times add1)))))
-        (foldl (lambda (y i) (draw-horizontal-line y i color)) img steps)))
+           (times (round (/ (image-height img) y-step)))
+           (steps (map (lambda (y) (+ start-y (* y y-step))) (map sub1 (build-list times add1)))))
+    (foldl (lambda (y i) (draw-horizontal-line y i color)) img steps)))
 
 ;; draw-grid : Number Number Position Image Color -> Image
 (define (draw-grid x-step y-step origin img color)
@@ -250,14 +252,14 @@
 ;; new-turtle-direction-full : Animation Number -> Animation
 (define (new-turtle-direction-full anim turn)
   (set-location anim (make-turtle (new-turtle-direction anim turn)
-                               (get-mirror-x anim)
-                               (get-mirror-y anim))))
+                                  (get-mirror-x anim)
+                                  (get-mirror-y anim))))
 
 ;; new-turtle-position-full : Animation Number -> Animation
 (define (new-turtle-position-full anim turn)
   (set-location anim (make-turtle (new-turtle-position anim turn)
-                               (get-mirror-x anim)
-                               (get-mirror-y anim))))
+                                  (get-mirror-x anim)
+                                  (get-mirror-y anim))))
 
 ;; ---------------------------------------------------------------------------------------------------
 ;; Setters for animation
@@ -277,6 +279,14 @@
                       (animation-stamps anim)
                       (animation-origin anim)
                       (animation-turtle? anim))
+      anim))
+
+;; set-angle : Animation Number -> Animation
+(define (set-angle anim a)
+  (if (number? a)
+      (set-location anim (make-turtle (make-position (get-x anim)(get-y anim) a)
+                                      (get-mirror-x anim)
+                                      (get-mirror-y anim)))
       anim))
 
 ;; set-image : Animation Image -> Animation
@@ -312,7 +322,7 @@
                          (animation-origin anim)
                          (animation-turtle? anim))]
         [else anim]))
- 
+
 ;; set-color : Animation Color -> Animation
 (define (set-color anim setting)
   (cond [(or (string? setting) (color? setting)
@@ -347,7 +357,7 @@
                          (animation-stamps anim)
                          (animation-origin anim)
                          (animation-turtle? anim))]
-         [else anim]))
+        [else anim]))
 
 ;; x-inside? : Number Number Numer -> Boolean
 (define (x-inside? x origon-x width)
@@ -409,22 +419,22 @@
 ;; set-mirror-y-on : Animation -> Animation
 (define (set-mirror-y-on anim)
   (set-location anim 
-                  (make-turtle (get-position anim)
-                               (get-x anim)
-                               (get-mirror-y anim))))
+                (make-turtle (get-position anim)
+                             (get-x anim)
+                             (get-mirror-y anim))))
 
 ;; set-mirror-y-off : Animation -> Animation
 (define (set-mirror-y-off anim)
   (set-location anim
-                  (make-turtle (get-position anim)
-                               false
-                               (get-mirror-y anim))))
+                (make-turtle (get-position anim)
+                             false
+                             (get-mirror-y anim))))
 
 ;; set-mirror-x-on : Animation -> Animation
 (define (set-mirror-x-on anim)
   (set-location anim (make-turtle (get-position anim)
-                               (get-mirror-x anim)
-                               (get-y anim))))
+                                  (get-mirror-x anim)
+                                  (get-y anim))))
 
 ;; set-origin-xy : Animation -> Animation 
 (define (set-origin-xy anim)
@@ -485,7 +495,7 @@
 
 ;; set-turtle-on-off : Animation -> Animation
 (define (set-turtle-on-off anim setting)
-   (if (boolean? setting)
+  (if (boolean? setting)
       (make-animation (animation-location anim)
                       (animation-image anim)
                       (animation-commands anim)
@@ -519,8 +529,8 @@
   (set-location anim (make-turtle (make-position (get-origin-x anim)
                                                  (get-origin-y anim)
                                                  (get-angle anim))
-                                   (get-mirror-x anim)
-                                   (get-mirror-y anim))))
+                                  (get-mirror-x anim)
+                                  (get-mirror-y anim))))
 
 ;; draw-image : Position Position Image String Number String -> Image
 (define (draw-image new-pos old-pos img color size style)
@@ -568,52 +578,52 @@
                            (animation-pen-size next-step)
                            (animation-pen-style next-step))]
               [ (number? mx)
-               (draw-image (make-position (mirror new-x mx) new-y new-angle)
-                           (make-position (mirror old-x mx) old-y old-angle)
-                           img
-                           (get-color next-step)
-                           (animation-pen-size next-step)
-                           (animation-pen-style next-step))]
+                (draw-image (make-position (mirror new-x mx) new-y new-angle)
+                            (make-position (mirror old-x mx) old-y old-angle)
+                            img
+                            (get-color next-step)
+                            (animation-pen-size next-step)
+                            (animation-pen-style next-step))]
               [ (number? my)
-               (draw-image (make-position new-x (mirror new-y my) new-angle)
-                           (make-position old-x (mirror old-y my) old-angle)
-                           img
-                           (get-color next-step) 
-                           (animation-pen-size next-step)
-                           (animation-pen-style next-step))]
+                (draw-image (make-position new-x (mirror new-y my) new-angle)
+                            (make-position old-x (mirror old-y my) old-angle)
+                            img
+                            (get-color next-step) 
+                            (animation-pen-size next-step)
+                            (animation-pen-style next-step))]
               [else img]))
       (animation-image next-step)))
 
 ;; draw-stamp : Position Image Image -> Image
 (define (draw-stamp posit img st)
-    (cond [(on-screen? posit img)     
-           (place-image st
-                        (position-x posit)
-                        (position-y posit)
+  (cond [(on-screen? posit img)     
+         (place-image st
+                      (position-x posit)
+                      (position-y posit)
                       img)]
         [else img]))
 
 ;; draw-m-stamp : Turtle Image Image -> Image
 (define (draw-m-stamp t img st)
-      (let ((image (draw-stamp (turtle-location t) img st))
-            (mx (turtle-mirror-x t))
-            (my (turtle-mirror-y t))
-            (new-x (t-get-x t))
-            (new-y (t-get-y t))
-            (new-angle (t-get-angle t)))
-        (cond [(and (number? mx) (number? my))
-               (draw-stamp (make-position (mirror new-x mx) (mirror new-y my) new-angle)
-                           image
-                           st)]
-              [ (number? mx)
-               (draw-stamp (make-position (mirror new-x mx) new-y new-angle)
-                           image
-                           st)]
-              [ (number? my)
-               (draw-stamp (make-position new-x (mirror new-y my) new-angle)
-                           image
-                           st)]
-              [else image])))
+  (let ((image (draw-stamp (turtle-location t) img st))
+        (mx (turtle-mirror-x t))
+        (my (turtle-mirror-y t))
+        (new-x (t-get-x t))
+        (new-y (t-get-y t))
+        (new-angle (t-get-angle t)))
+    (cond [(and (number? mx) (number? my))
+           (draw-stamp (make-position (mirror new-x mx) (mirror new-y my) new-angle)
+                       image
+                       st)]
+          [ (number? mx)
+            (draw-stamp (make-position (mirror new-x mx) new-y new-angle)
+                        image
+                        st)]
+          [ (number? my)
+            (draw-stamp (make-position new-x (mirror new-y my) new-angle)
+                        image
+                        st)]
+          [else image])))
 
 ;; draw-animation : Animation -> Image
 (define (draw-animation anim)
@@ -644,7 +654,7 @@
           (position-x new-pos))
        (= (position-y old-pos)
           (position-y new-pos))))
-            
+
 ;; number-of-stamps : Animation -> Number
 (define (number-of-stamps anim)
   (cond [(and (animation-stamp? anim)
@@ -654,7 +664,7 @@
               (list? (animation-stamps anim)))
          (length (animation-stamps anim))]
         [else 0]))
- 
+
 ;; number-of-colors : Animation -> Number
 (define (number-of-colors anim)
   (cond [(and (animation-pen? anim)
@@ -860,7 +870,7 @@
   (if (<= times 0)
       '()
       (append (if (list? commands) 
-                   commands
+                  commands
                   (list commands))
               (repeat (sub1 times) commands))))
 
@@ -932,12 +942,16 @@
 (define (show-turtle)
   (lambda (x) (set-turtle-on-off x true)))
 
+;; reset-angle : <void> -> Procedure
+(define (reset-angle)
+  (lambda (x) (set-angle x 0)))
+
 ;; ---------------------------------------------------------------------------------------------------
 ;; Functions for starting the animation
 ;; ---------------------------------------------------------------------------------------------------
 (define (create-animation list-of-commands width height) 
   (make-animation (make-turtle (make-position (/ width 2) (/ height 2) 0) false false)
-                 (empty-scene width height BG-COLOR)
+                  (empty-scene width height BG-COLOR)
                   (flatten list-of-commands) 
                   COLOR 
                   true
@@ -993,7 +1007,7 @@
 ;; draw-step-by-step : List-of-procedures -> Image
 (define (draw-step-by-step list-of-commands)
   (animation-image (big-bang 
-                     (create-animation list-of-commands WIDTH HEIGHT)
+                    (create-animation list-of-commands WIDTH HEIGHT)
                     (on-key handle-command)
                     (to-draw draw-animation)
                     (stop-when ready? draw-last))))   
@@ -1002,7 +1016,7 @@
 ;; draw-step-by-step-custom : List-of-procedures -> Image
 (define (draw-step-by-step-custom list-of-commands width height)
   (animation-image (big-bang 
-                     (create-animation list-of-commands width height)
+                    (create-animation list-of-commands width height)
                     (on-key handle-command)
                     (to-draw draw-animation)
                     (stop-when ready? draw-last))))   
