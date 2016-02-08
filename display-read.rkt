@@ -1,4 +1,4 @@
-;; Display-read-utility v.0.7
+;; Display-read-utility v.0.8
 ;; =================
 ;; - display-read displays one image/string/number and shows a text editor, returns the string entered in the text buffer
 ;; - display-select displays one image/string/number and selection for the user, the selection can be a list of images, strings or numbers
@@ -6,6 +6,9 @@
 ;; NOTE: for non-displayable choices, shows a question mark
 ;; - display-value displays one image/string/number and the given value, if it is displayable (e.g. image/string/number), returns the given value
 ;; NOTE: for non-displayable values, shows an empty-image
+;; - display-read-number reads a number and returns it, if it is not a number returns #f
+;; - display-info displays one image/string/number
+;; - display-info-timer displays one image/string/number for x ticks and closes automatically
 ;; You can move coursor and selector with arrowkeys and delete characters with backspace-key
 ;; Enter returns the editor contents, selected item or value
 
@@ -17,13 +20,11 @@
 (require "big-crunch.rkt")           ; comment out in WeScheme
 
 (provide display-read
+         display-read-number
          display-select
          display-value
-       ; empty-image                 ;needed in WeScheme
-         )
-
-;; needed in WeScheme:
-;(define empty-image (rectangle 0 0 0 "white"))
+         display-info
+         display-info-timer)
 
 (define BUFFER-SIZE 30)
 (define TEXT-X 8)    
@@ -98,7 +99,6 @@
 ;; - editor (Editor), editor struct containing buffer and cursor info
 ;; - img (Image), user provided image to be displayed in the UI window
 ;; - active? (Boolean), when #true window is displayed, when set to #false window closes
-;; - display-mode? (Boolean), when #true no editor shown
 
 (define W1 (make-window (make-editor "" 0 0) (circle 100 "solid" "red") #t)) ; normal window with image and empty editor
 
@@ -117,6 +117,13 @@
 ;; - active? (Boolean), when #true window is displayed, when set to #false window closes
 
 (define MS1 (make-selector "OK" 0 (circle 100 "solid" "red") #t)) ; selector with one text choice
+
+(define-struct info (item timer? timer-value active?))
+;; Info is (make-info Image/String/Number Boolean Number Boolean)
+;; interp. stores UI window state:
+;; - item (Image/String/Number), user provided image to be displayed in the UI window
+;; - timer?, tells if timer is active
+;; - active? (Boolean), when #true window is displayed, when set to #false window closes
 
 ;; =================
 ;; Functions:
@@ -223,6 +230,14 @@
                                                              (on-key handle-key-window)
                                                              (stop-when stop?)))))
 
+;; display-read-number : Image or String or Number -> Number/Boolean
+;; a function for displaying user provided image and opening editor for user input
+(define (display-read-number item)
+     (string->number (editor-textbuf (window-editor (big-bang/big-crunch (make-window (make-editor "" 0 0) (item->image item) #t)                       
+                                                             (to-draw render-window)      
+                                                             (on-key handle-key-window)
+                                                             (stop-when stop?))))))
+
 ;; display-no-read :  Image or String or Number -> String
 ;; a function for displaying user provided image and opening editor for user input
 (define (display-no-read item)
@@ -249,6 +264,25 @@
                                          (on-key handle-key-selector)
                                          (stop-when stop?))))
 
+;; display-info :  Image/String/Number -> Image/String/Number
+;; a function for displaying user the provided image, string or number in addition to the given value (only string, number or image is displayed)
+;; returns the given value (also when it was non-displayable)
+(define (display-info item)
+  (info-item (big-bang/big-crunch (make-info item #f 0 #t)                       
+                                         (to-draw render-just-image)      
+                                         (on-key handle-key-just-image)
+                                         (stop-when stop?))))
+
+;; display-info-timer :  Image/String/Number Number -> Image/String/Number
+;; a function for displaying user the provided image, string or number in addition to the given value (only string, number or image is displayed)
+;; returns the given value (also when it was non-displayable)
+(define (display-info-timer item timer)
+  (info-item (big-bang/big-crunch (make-info item #t timer #t)                       
+                                         (to-draw render-just-image)      
+                                         (on-key handle-key-just-image)
+                                         (on-tick handle-timer)
+                                         (stop-when stop?))))
+
 ;; stop? : Window/Selector -> Boolean
 ;; tests if the window should be closed
 (define (stop? a)
@@ -256,6 +290,8 @@
          (not (window-active? a))]
         [(selector? a)
          (not (selector-active? a))]
+        [(info? a)
+         (not (info-active? a))]
         [else
          #f]))
 
@@ -295,6 +331,8 @@
          (render-img (window-img a))]
         [(selector? a)
          (render-img (selector-img a))]
+        [(info? a)
+         (render-img (render-value (info-item a)))]
         [else
          empty-image]))
 
@@ -369,6 +407,12 @@
   (above (render-img (selector-img s))
          (render-value (selector-choices s))))
 
+;; handle-timer : Info -> Info
+(define (handle-timer i)
+  (if (<= (info-timer-value i) 0)
+      (make-info (info-item i) (info-timer? i) (info-timer-value i) #f)    
+      (make-info (info-item i) (info-timer? i) (sub1 (info-timer-value i)) (info-active? i))))
+  
 ;; Helper-functions:
 ;; =================
 ;; cut-left-side : Editor -> String
@@ -439,7 +483,7 @@
                       (window-img w)
                       (window-active? w))]))
 
-;; handle-key-just-image : Window/Selector Key -> Window
+;; handle-key-just-image : Window/Selector/Info Key -> Window/Selector/Info
 ;; checks if return/enter has been pressed
 
 (define (handle-key-just-image a k)
@@ -447,6 +491,8 @@
          (make-window (window-editor a) (window-img a) #f)]
         [(and (selector? a)(key=? k "\r"))
          (make-selector (selector-choices a) (selector-selected a) (selector-img a) #f)]
+        [(and (info? a)(key=? k "\r"))
+         (make-info (info-item a) (info-timer? a)(info-timer-value a) #f)]
         [else a]))
 
 ;; add : Number List Number -> Number
