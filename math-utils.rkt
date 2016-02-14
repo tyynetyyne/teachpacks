@@ -37,13 +37,35 @@
 
 ;; exp? : String-> Boolean
 (define (exp? str)
-  (string->number str))
+  (number? (string->number str)))
 
 ;; parse-unit : String -> String
 (define (parse-unit str)
   (if (< (string-length str) 1)
       ""
       (substring str 0 (sub1 (string-length str)))))
+
+;; string-split : String -> list-of-String
+;; NOTE: needed in WeScheme (comment out in DrRacket)
+;(define (string-split str)
+;  (rec-string-split '() "" str))
+
+;; rec-string-split : list-of-String String String -> list-of-string
+;; splitting a string into a list of strings at each whitespace
+;; NOTE: needed in WeScheme (comment out in DrRacket)
+;(define (rec-string-split str-list curstr str)
+;      (cond [(and (<= (string-length str) 0)
+;                  (not (<= (string-length curstr) 0)))
+;             (append str-list (list curstr))]
+;            [(<= (string-length str) 0)
+;             str-list]
+;            [(and (string=? (substring str 0 1) " ")
+;                  (> (string-length curstr) 0))
+;             (rec-string-split (append str-list (list curstr)) "" (substring str 1))]
+;            [(string=? (substring str 0 1) " ")
+;             (rec-string-split str-list curstr (substring str 1))]
+;            [else
+;             (rec-string-split str-list (string-append curstr (substring str 0 1)) (substring str 1))]))
 
 ;; display-with-units : String Size Color -> Image
 (define (display-with-units str size color)
