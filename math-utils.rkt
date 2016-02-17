@@ -2,6 +2,7 @@
 (require 2htdp/image)
 
 (provide display-with-units
+         units->image
          round-to-integer
          round-to-decimal)
 
@@ -19,19 +20,25 @@
       (exact->inexact (/ (round-to-integer (* x (expt 10 decimals))) (expt 10 decimals)))
       #f))
 
-;; unit->image : String Number Number Color -> Image
+;; unit->image : String String Number Color -> Image
 (define (unit->image unit exp size color)
   (overlay/xy (unit-text->image unit size color)
               (image-width (unit-text->image unit size color)) 0
               (text exp (floor (/ size 2)) color)))
 
+;; units->image : String Number Number Color -> Image/false
+(define (units->image unit exp size color)
+  (if (and (string? unit)(number? exp)(number? size)(< 0 size 256))
+      (unit->image unit (number->string exp) size color)
+      #f))
+  
 ;; parse-exp : String -> String
 (define (parse-exp str)
   (if (< (string-length str) 1)
       ""
       (substring str (sub1 (string-length str)))))
 
-;; unit->image : String Size Color -> Image
+;; unit-text->image : String Size Color -> Image
 (define (unit-text->image str size color)
   (text str size color))
 
@@ -67,9 +74,9 @@
 ;            [else
 ;             (rec-string-split str-list (string-append curstr (substring str 0 1)) (substring str 1))]))
 
-;; display-with-units : String Size Color -> Image
+;; display-with-units : String Integer Color -> Image/false
 (define (display-with-units str size color)
-  (if (and (string? str)(> (string-length str) 0))
+  (if (and (string? str)(> (string-length str) 0)(number? size)(< 0 size 256))
       (let [(l (string-split str))]
         (cond [(<= (length l) 1)
                empty-image]
@@ -82,5 +89,6 @@
                (beside (text (first l) size color)
                        (unit-text->image (second l) size color))]
               [else empty-image]))
-      empty-image))
+      #f))
 
+  
