@@ -1,10 +1,13 @@
 #lang racket
 (require 2htdp/image)
 
-(provide display-with-units
-         units->image
+(provide quantity->image
+         quantity-str->image
+         ; term->image         ; todo
          round-to-integer
-         round-to-decimal)
+         round-to-decimal
+         display-with-units  ; replaced by quantity-str->image
+         units->image)
 
 ;; round-to-integer : Number -> Number/Boolean
 (define (round-to-integer x)
@@ -31,7 +34,7 @@
   (if (and (string? unit)(number? exp)(number? size)(< 0 size 256))
       (unit->image unit (number->string exp) size color)
       #f))
-  
+
 ;; parse-exp : String -> String
 (define (parse-exp str)
   (if (< (string-length str) 1)
@@ -91,4 +94,18 @@
               [else empty-image]))
       #f))
 
-  
+;; quantity-str->image : String Integer Color -> Image/false
+(define (quantity-str->image str size color)
+  (display-with-units str size color))
+
+;; quantity->image : Number String Integer Integer Color -> Image/false
+(define (quantity->image value units exp size color)
+  (cond [(and (number? value)(string? units)(number? exp)(not (or (= exp 0)(= exp 1)))(number? size)(< 0 size 256))
+         (beside (text (number->string value) size color)
+                 (units->image units exp size color))]
+        [(and (number? value)(string? units)(number? exp)(= exp 1)(number? size)(< 0 size 256))
+         (beside (text (number->string value) size color)
+                 (unit-text->image units size color))]
+        [(and (number? value)(string? units)(number? exp)(= exp 0)(number? size)(< 0 size 256))
+         (text (number->string value) size color)]
+        [else #f]))
