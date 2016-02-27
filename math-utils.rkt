@@ -1,3 +1,5 @@
+;; Math-utils 0.2
+;; -----------------
 #lang racket
 (require 2htdp/image)
 
