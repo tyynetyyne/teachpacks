@@ -1,5 +1,6 @@
-;; Math-utils 0.2
-;; -----------------
+;; Math-utils 0.3
+;; - added mean, median, mode, frequencies
+;; ---------------------------------------
 #lang racket
 (require 2htdp/image)
 
@@ -9,7 +10,13 @@
          round-to-integer
          round-to-decimal
          display-with-units  ; replaced by quantity-str->image
-         units->image)
+         units->image
+         mean ;new
+         median ;new
+         mode ;new
+         frequency ;new
+         frequencies ;new
+         )
 
 ;; round-to-integer : Number -> Number/Boolean
 (define (round-to-integer x)
@@ -111,3 +118,73 @@
         [(and (number? value)(string? units)(number? exp)(= exp 0)(number? size)(< 0 size 256))
          (text (number->string value) size color)]
         [else #f]))
+
+;; mean : List<Number> -> Number/False
+(define (mean numbers)
+  (if (not (empty? numbers))
+      (/ (apply + numbers) (length numbers))
+      #f))
+
+;; median-helper : List<Number> -> Number
+(define (median-helper numbers)
+  (if (not (even? (length numbers))) 
+          (list-ref numbers (floor (/ (length numbers) 2)))
+          (mean (list (list-ref numbers (/ (length numbers) 2))
+                      (list-ref numbers (sub1 (/ (length numbers) 2)))))))
+
+;; median : List<Number> -> Number/False
+(define (median numbers)
+  (if (not (empty? numbers))
+      (median-helper (sort numbers <))
+      #f))
+
+;; MODE
+;; ---------------
+;; same? : Number -> Boolean
+(define (same? x)
+  (lambda (y) (= x y)))
+
+;; count : List<Number> -> Number
+(define (count numbers)
+  (length (filter (same? (first numbers)) numbers)))
+
+;; cut-off : List<Number> -> List<Number>
+(define (cut-off numbers)
+  (remove* (list (first numbers)) numbers))
+
+;; helper-mode : Number Number Number Number List<Number> -> Number/False
+(define (helper-mode mode-now max-now numbers)
+  (if (empty? numbers)
+      mode-now
+        (if (> (count numbers) max-now)
+            (helper-mode (first numbers)(count numbers)(cut-off numbers))
+            (helper-mode mode-now max-now (cut-off numbers)))))
+
+;; mode : List<Number> -> Number/False
+(define (mode numbers)
+    (if (not (empty? numbers))
+        (helper-mode #f 0 (sort numbers <))
+        #f))
+
+;; frequency : Number List<Number> -> Number
+(define (frequency i numbers)
+  (- (length numbers)
+     (length (remove* (list i) numbers))))
+
+;; frequencies : List<(List Number Number)> List<Number> -> List<(List Number Number)>
+(define (frequencies-helper current numbers)
+  (if (empty? numbers)
+      current
+      (if (empty? current)
+          (frequencies-helper (list (list (first numbers) (frequency (first numbers) numbers)))
+                              (cut-off numbers))
+          (frequencies-helper (cons (list (first numbers)(frequency (first numbers) numbers))
+                                    current)
+                              (cut-off numbers)))))
+
+;; frequencies : List<Numbers> -> List<(List Number Number)> / False
+(define (frequencies numbers)
+  (if (not (empty? numbers))
+      (sort (frequencies-helper '() numbers)
+            (lambda (x y) (> (second x)(second y))))
+      #f))
