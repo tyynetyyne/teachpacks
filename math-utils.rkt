@@ -1,5 +1,5 @@
 ;; Math-utils 0.3
-;; - added mean, median, mode, frequencies
+;; - added mean, median, mode, frequency, frequencies
 ;; ---------------------------------------
 #lang racket
 (require 2htdp/image)
