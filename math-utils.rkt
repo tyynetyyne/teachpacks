@@ -152,30 +152,32 @@
 ;; MODE
 ;; ---------------
 ;; same? : Number -> Boolean
-(define (same? x)
-  (lambda (y) (= x y)))
+;(define (same? x)
+;  (lambda (y) (equal? x y)))
 
 ;; count : List<Number> -> Number
-(define (count numbers)
-  (length (filter (same? (first numbers)) numbers)))
+;(define (count numbers)
+;  (length (filter (same? (first numbers)) numbers)))
 
 ;; cut-off : List<Number> -> List<Number>
 (define (cut-off numbers)
   (remove* (list (first numbers)) numbers))
 
 ;; helper-mode : Number Number Number Number List<Number> -> Number/False
-(define (helper-mode mode-now max-now numbers)
-  (if (empty? numbers)
-      mode-now
-        (if (> (count numbers) max-now)
-            (helper-mode (first numbers)(count numbers)(cut-off numbers))
-            (helper-mode mode-now max-now (cut-off numbers)))))
+;(define (helper-mode mode-now max-now numbers)
+;  (if (empty? numbers)
+;      mode-now
+;        (if (> (count numbers) max-now)
+;            (helper-mode (first numbers)(count numbers)(cut-off numbers))
+;            (helper-mode mode-now max-now (cut-off numbers)))))
 
 ;; mode : List<Number> -> Number/False
-(define (mode numbers)
-    (if (not (empty? numbers))
-        (helper-mode #f 0 (sort numbers <))
-        #f))
+;(define (mode numbers)
+;    (if (not (empty? numbers))
+;        (helper-mode #f 0 (sort numbers <))
+;        #f))
+
+
 
 ;; frequency : Number List<Number> -> Number
 (define (frequency i numbers)
@@ -198,4 +200,17 @@
   (if (not (empty? numbers))
       (sort (frequencies-helper '() numbers)
             (lambda (x y) (> (second x)(second y))))
+      #f))
+
+;; mode : List<Any> -> Any
+(define (mode data)
+  (if (not (empty? data))
+      (let* [(freq-data (frequencies data))
+             (f (second (argmax second freq-data)))]
+        (if (= f 1)
+            #f  ; no mode, max frequency 1
+            (let [(m (map first (filter (lambda (x) (= f (second x))) freq-data)))] ; in case there are more values of the same frequency
+              (if (= 1 (length m))
+                  (first m) ; one answer
+                  m))))  ; multiple same values
       #f))
