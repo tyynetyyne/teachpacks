@@ -1,5 +1,6 @@
-;; Math-utils 0.3
+;; Math-utils 0.4
 ;; - added mean, median, mode, frequency, frequencies
+;; - added degrees->radians, radians->degrees
 ;; ---------------------------------------
 #lang racket
 (require 2htdp/image)
@@ -16,7 +17,17 @@
          mode ;new
          frequency ;new
          frequencies ;new
+         degrees->radians ; new
+         radians->degrees ; new
          )
+
+;; degrees->radians : Number -> Number
+(define (degrees->radians deg)
+  (/ (* deg pi) 180))
+
+;; radians->degrees : Number -> Number
+(define (radians->degrees rad)
+  (/ (* rad 180) pi))
 
 ;; round-to-integer : Number -> Number/Boolean
 (define (round-to-integer x)
