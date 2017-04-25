@@ -2,10 +2,19 @@
 ;; about the language level of this file in a form that our tools can easily process.
 #reader(lib "htdp-advanced-reader.ss" "lang")((modname plot2D_for_wescheme) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #t #t none #f () #f)))
 (require 2htdp/image)
-
+(require racket/list)
 ;(provide plot2D
 ;         func
 ;         dots)
+
+;; this is needed in WeScheme (comment out in DrRacket)
+;(define (reverse-flatten-into x lst)
+;  (if (not (procedure? x))
+;      (foldl reverse-flatten-into lst x)
+;      (cons x lst)))
+
+;(define (flatten lst)
+;  (reverse (reverse-flatten-into lst '())))
 
 ;; constants
 (define SIZE 400)
@@ -19,10 +28,10 @@
 (define AXIS-WIDTH 60)
 
 ;; variables for max and min
-(define x-min #f)
-(define y-min #f)
-(define x-max #f)
-(define y-max #f)
+;(define x-min #f)
+;(define y-min #f)
+;(define x-max #f)
+;(define y-max #f)
 
 ;; variables for scaling
 ;(define x-step #f)
@@ -109,14 +118,14 @@
   (text (number->string t) FONT-SIZE-AXIS "black"))
 
 ;; plot-x-axis : List<Number> -> Image
-(define (plot-x-axis xs x-step)
+(define (plot-x-axis xs x-step x-min)
   (foldl place-image (rectangle SIZE FONT-SIZE-AXIS 0 "transparent")
-         (map label xs) (map (convert-x x-step) xs) (make-list (length xs)(/ FONT-SIZE-AXIS 2) )))  
+         (map label xs) (map (convert-x x-step x-min) xs) (make-list (length xs)(/ FONT-SIZE-AXIS 2) )))  
 
 ;; plot-y-axis : List<Number> -> Image
-(define (plot-y-axis ys y-step)
+(define (plot-y-axis ys y-step y-min)
   (foldl place-image (rectangle AXIS-WIDTH SIZE 0 "transparent")
-         (map label ys)  (make-list (length ys)(/ AXIS-WIDTH 2) ) (map (convert-y y-step) ys)))  
+         (map label ys)  (make-list (length ys)(/ AXIS-WIDTH 2) ) (map (convert-y y-step y-min) ys)))  
 
 ;; -------------------------------------------------------------------
 ;; func : Function Number Number String -> Function
@@ -131,59 +140,60 @@
                                   (overlay/xy (text label 13 "black")
                                               -4 -1
                                               LABEL-BOX)))]           
-      (begin 
-        (if (not (number? x-min))
-            (set! x-min start)
-            (set! x-min (min x-min start)))
-        (if (not (number? y-min))
-            (set! y-min (apply min y))
-            (set! y-min (min (apply min y) y-min)))
-        (if (not (number? x-max))
-            (set! x-max end)
-            (set! x-max (max x-max end)))
-        (if (not (number? y-max))
-            (set! y-max (apply max y))
-            (set! y-max (max (apply max y) y-max)))
-        (cons label (cons linecolor (map make-posn x y)))))))
+;      (begin 
+;        (if (not (number? x-min))
+;            (set! x-min start)
+;            (set! x-min (min x-min start)))
+;        (if (not (number? y-min))
+;            (set! y-min (apply min y))
+;            (set! y-min (min (apply min y) y-min)))
+;        (if (not (number? x-max))
+;            (set! x-max end)
+;            (set! x-max (max x-max end)))
+;        (if (not (number? y-max))
+;            (set! y-max (apply max y))
+;            (set! y-max (max (apply max y) y-max)))
+        (cons label (cons linecolor (map make-posn x y))))))
 
-;; convert-y : Number -> Number
-(define (convert-y y-step)
+;; convert-y : Number Number -> Number
+(define (convert-y y-step y-min)
   (lambda (y)
     (- SIZE (* y-step (- y y-min)))))
 
-;; convert-x : Number -> Number
-(define (convert-x x-step)
+;; convert-x : Number Number -> Number
+(define (convert-x x-step x-min)
   (lambda (x)
     (* x-step (- x x-min))))
 
 ;; plot : List<Posn> Image Color -> Image
-(define (plot posn-list target linecolor x-step y-step)
+(define (plot posn-list target linecolor x-step y-step x-min x-max y-min y-max)
   (if (or (empty? posn-list)
           (< (length posn-list) 2))
       target
       (plot (rest posn-list)
             (add-line target
-                      ((convert-x x-step) (posn-x (first posn-list)))
-                      ((convert-y y-step) (posn-y (first posn-list)))
-                      ((convert-x x-step) (posn-x (second posn-list)))
-                      ((convert-y y-step) (posn-y (second posn-list)))
+                      ((convert-x x-step x-min) (posn-x (first posn-list)))
+                      ((convert-y y-step y-min) (posn-y (first posn-list)))
+                      ((convert-x x-step x-min) (posn-x (second posn-list)))
+                      ((convert-y y-step y-min) (posn-y (second posn-list)))
                       linecolor)
-            linecolor
-            x-step
-            y-step)))
+            linecolor x-step y-step x-min x-max y-min y-max)))
 
 ;; plot-color :
-(define (plot-with-color x-step y-step)
+(define (plot-with-color x-step y-step x-min x-max y-min y-max)
   (lambda (posn-list target)
-    (plot (rest (rest posn-list)) target (second posn-list) x-step y-step)))
+    (plot (rest (rest posn-list)) target (second posn-list) x-step y-step x-min x-max y-min y-max)))
 
+;; --------------------
+;; TÄSSÄ x-min, x-max, y-min, y-max
+;; --------------------
 ;; plot2D-help : List<Posn> String String String -> Image
-(define (plot2D-help list-of-func)
+(define (plot2D-help list-of-func x-min x-max y-min y-max)
   (let [(x-step (/ SIZE (- x-max x-min)))
         (y-step (/ SIZE (- y-max y-min)))]
     (if (list? list-of-func)
-        (foldl (plot-with-color x-step y-step) BG list-of-func)
-        ((plot-with-color x-step y-step) list-of-func BG))))
+        (foldl (plot-with-color x-step y-step x-min x-max y-min y-max) BG list-of-func)
+        ((plot-with-color x-step y-step x-min x-max y-min y-max) list-of-func BG))))
 
 ;; plot-label : List -> Image
 (define (plot-label func img)
@@ -200,58 +210,61 @@
       (foldl plot-label empty-image list-of-func)
       (plot-label empty-image list-of-func)))
 
-(define (plot2D-axis list-of-func)
+;; --------------------
+;; TÄSSÄ x-min, x-max, y-min, y-max
+;; --------------------
+(define (plot2D-axis list-of-func x-min x-max y-min y-max)
   (let* [(x-step (/ SIZE (- x-max x-min)))
          (y-step (/ SIZE (- y-max y-min)))
-         (plotted (add-axes (plot2D-help list-of-func) x-step y-step))        
+         (plotted (add-axes (plot2D-help list-of-func x-min x-max y-min y-max) x-step y-step x-min y-min))        
          (x-values (axis x-min x-max))
          (y-values (axis y-min y-max))
-         (y-axis-marks (create-y-axis y-values y-step))
-         (x-axis-marks (create-x-axis x-values x-step))
+         (y-axis-marks (create-y-axis y-values y-step y-min))
+         (x-axis-marks (create-x-axis x-values x-step x-min))
          (marked-plot (above x-axis-marks
                              (beside y-axis-marks plotted y-axis-marks)
                              x-axis-marks))]
     (overlay/xy 
-     (plot-y-axis y-values y-step)
+     (plot-y-axis y-values y-step y-min)
      AXIS-WIDTH (- AXIS-HIGHT)
      (above marked-plot
-            (plot-x-axis x-values x-step)))))
+            (plot-x-axis x-values x-step x-min)))))
 
-(define (add-mark-y y-step)
+(define (add-mark-y y-step y-min)
   (lambda(y img)
     (add-line img
               0 
-              ((convert-y y-step) y)
+              ((convert-y y-step y-min) y)
               10
-              ((convert-y y-step) y)
+              ((convert-y y-step y-min) y)
               "black")))
 
-(define (add-mark-x x-step)
+(define (add-mark-x x-step x-min)
   (lambda(x img)
     (add-line img
-              ((convert-x x-step) x)
+              ((convert-x x-step x-min) x)
               0
-              ((convert-x x-step) x)
+              ((convert-x x-step x-min) x)
               10
               "black")))
 
-(define (create-x-axis xs x-step)
-  (foldl (add-mark-x x-step) AXIS xs))
+(define (create-x-axis xs x-step x-min)
+  (foldl (add-mark-x x-step x-min) AXIS xs))
 
-(define (create-y-axis ys y-step)
-  (foldl (add-mark-y y-step) (rotate 90 AXIS) ys))
+(define (create-y-axis ys y-step y-min)
+  (foldl (add-mark-y y-step y-min) (rotate 90 AXIS) ys))
 
-(define (add-axes plots x-step y-step)
+(define (add-axes plots x-step y-step x-min y-min)
   (add-line (add-line plots
-                      ((convert-x x-step) 0)
+                      ((convert-x x-step x-min) 0)
                       0
-                      ((convert-x x-step) 0)
+                      ((convert-x x-step x-min) 0)
                       SIZE
                       "black")
             0 
-            ((convert-y y-step) 0)
+            ((convert-y y-step y-min) 0)
             SIZE
-            ((convert-y y-step) 0)
+            ((convert-y y-step y-min) 0)
             "black")) 
 
 ;; add-line-colors : List -> List
@@ -262,11 +275,54 @@
           (list (f-list i))
           (add-line-colors (rest f-list)(cons ((first f-list) i) ready) (add1 i))))) 
 
+(define (get-x-list func)
+  (map posn-x (rest (rest func))))
+
+(define (find-max-x list-of-func)
+   (if (not (list? list-of-func))
+            (apply max (get-x-list list-of-func))
+            (apply max (flatten (map get-x-list list-of-func)))))
+
+(define (find-min-x list-of-func)
+   (if (not (list? list-of-func))
+            (apply min (get-x-list list-of-func))
+            (apply min (flatten (map get-x-list list-of-func)))))
+
+(define (get-y-list func)
+  (map posn-y (rest (rest func))))
+
+(define (find-max-y list-of-func)
+   (if (not (list? list-of-func))
+            (apply max (get-y-list list-of-func))
+            (apply max (flatten (map get-y-list list-of-func)))))
+
+(define (find-min-y list-of-func)
+   (if (not (list? list-of-func))
+            (apply min (get-y-list list-of-func))
+            (apply min (flatten (map get-y-list list-of-func)))))
+
+(check-expect (find-max-x (list (cons "label" (cons 3 (list (make-posn 2 3)
+                                                            (make-posn 4 5)
+                                                            (make-posn 10 0))))))
+              10)
+
+(check-expect (find-max-x (list (cons "label" (cons 3 (list (make-posn 2 3)
+                                                            (make-posn 4 5)
+                                                            (make-posn 10 0))))
+                                (cons "label" (cons 3 (list (make-posn 2 3)
+                                                            (make-posn 40 5)
+                                                            (make-posn 10 0))))))
+              40)
+
 (define (plot2D list-of-f x-label y-label title)
   (let* [(list-of-func (add-line-colors list-of-f '() 1))
+         (min-x (find-min-x list-of-func))
+         (min-y (find-min-y list-of-func))
+         (max-x (find-max-x list-of-func))
+         (max-y (find-max-y list-of-func))
          (plotted-labels (plot-labels list-of-func))
          (plots (overlay/xy (frame plotted-labels) -75 -15
-                            (plot2D-axis list-of-func)))]
+                            (plot2D-axis list-of-func min-x max-x min-y max-y)))]
     (beside (rotate 90 (text y-label FONT-SIZE "black"))
             SPACE
             (above (text title FONT-SIZE "black")
@@ -288,8 +344,4 @@
 (plot2D (func suora -10 10 "y=x^2+3") "x" "y" "otsikko")
 (plot2D (list (func suora -1000 1000 "y=x^2+3") (func suora2 -1000 1000 "y=-2x^2+7")
               (func suora3 -100 100 "y=-2x^3+7")) "x" "y" "otsikko")
-
-;(define X (create-x-axis (axis x-min x-max)))
-;(define Y (create-y-axis (axis y-min y-max)))
-;(plot-y-axis (axis y-min y-max))
 
