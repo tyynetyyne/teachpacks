@@ -25,19 +25,8 @@
 (define y-max #f)
 
 ;; variables for scaling
-(define x-step #f)
-(define y-step #f)
-
-;; variable for labels
-(define label-text empty-image)
-
-;; variable for colors
-(define func-color 0)
-(define dot-color 0)
-
-(define (reset-colors)
-  (begin (set! func-color 0)
-         (set! dot-color 0)))
+;(define x-step #f)
+;(define y-step #f)
 
 (define (convert i)
   (cond [(= i 1) "blue"]
@@ -45,13 +34,6 @@
         [(= i 3) "green"]
         [(= i 4) "orange"]
         [else "black"]))
-
-(define (get-color type)
-  (if (string=? type "func")
-      (begin (set! func-color (add1 func-color))
-             (convert func-color))
-      (begin (set! dot-color (add1 dot-color))
-             (convert dot-color))))
 
 ;;-----------------------------------------------------------------------------
 ;; magnitude-pos : Number Number -> Number
@@ -127,134 +109,164 @@
   (text (number->string t) FONT-SIZE-AXIS "black"))
 
 ;; plot-x-axis : List<Number> -> Image
-(define (plot-x-axis xs)
+(define (plot-x-axis xs x-step)
   (foldl place-image (rectangle SIZE FONT-SIZE-AXIS 0 "transparent")
-         (map label xs) (map convert-x xs) (make-list (length xs)(/ FONT-SIZE-AXIS 2) )))  
+         (map label xs) (map (convert-x x-step) xs) (make-list (length xs)(/ FONT-SIZE-AXIS 2) )))  
 
 ;; plot-y-axis : List<Number> -> Image
-(define (plot-y-axis ys)
+(define (plot-y-axis ys y-step)
   (foldl place-image (rectangle AXIS-WIDTH SIZE 0 "transparent")
-         (map label ys)  (make-list (length ys)(/ AXIS-WIDTH 2) ) (map convert-y ys)))  
+         (map label ys)  (make-list (length ys)(/ AXIS-WIDTH 2) ) (map (convert-y y-step) ys)))  
 
 ;; -------------------------------------------------------------------
-;; func : Function Number Number String -> 
+;; func : Function Number Number String -> Function
 (define (func f start end label)
-  (let* [(step (/ (- end start) 100))
-         (x (range start (+ end step) step))
-         (y (map f x))
-         (linecolor (get-color "func"))
-         (new-label (overlay/xy (rectangle 35 1.5 "solid" linecolor)
-                                -70 -9
-                                (overlay/xy (text label 13 "black")
-                                            -4 -1
-                                            LABEL-BOX)))]           
-    (begin 
-      (if (not (number? x-min))
-          (set! x-min start)
-          (set! x-min (min x-min start)))
-      (if (not (number? y-min))
-          (set! y-min (apply min y))
-          (set! y-min (min (apply min y) y-min)))
-      (if (not (number? x-max))
-          (set! x-max end)
-          (set! x-max (max x-max end)))
-      (if (not (number? y-max))
-          (set! y-max (apply max y))
-          (set! y-max (max (apply max y) y-max)))
-      (if (= 0 (image-width label-text))
-          (set! label-text new-label)
-          (set! label-text (above label-text
-                                  new-label)))
-      (cons linecolor (map make-posn x y)))))
+  (lambda (l-color)
+    (let* [(step (/ (- end start) 100))
+           (x (range start (+ end step) step))
+           (y (map f x))
+           (linecolor (convert l-color))
+           (new-label (overlay/xy (rectangle 35 1.5 "solid" linecolor)
+                                  -70 -9
+                                  (overlay/xy (text label 13 "black")
+                                              -4 -1
+                                              LABEL-BOX)))]           
+      (begin 
+        (if (not (number? x-min))
+            (set! x-min start)
+            (set! x-min (min x-min start)))
+        (if (not (number? y-min))
+            (set! y-min (apply min y))
+            (set! y-min (min (apply min y) y-min)))
+        (if (not (number? x-max))
+            (set! x-max end)
+            (set! x-max (max x-max end)))
+        (if (not (number? y-max))
+            (set! y-max (apply max y))
+            (set! y-max (max (apply max y) y-max)))
+        (cons label (cons linecolor (map make-posn x y)))))))
 
-;; convert-y : Number Number -> Number
-(define (convert-y y)
-  (- SIZE (* y-step (- y y-min))))
+;; convert-y : Number -> Number
+(define (convert-y y-step)
+  (lambda (y)
+    (- SIZE (* y-step (- y y-min)))))
 
-;; convert-x : Number Number -> Number
-(define (convert-x x)
-  (* x-step (- x x-min)))
+;; convert-x : Number -> Number
+(define (convert-x x-step)
+  (lambda (x)
+    (* x-step (- x x-min))))
 
 ;; plot : List<Posn> Image Color -> Image
-(define (plot posn-list target linecolor)
+(define (plot posn-list target linecolor x-step y-step)
   (if (or (empty? posn-list)
           (< (length posn-list) 2))
       target
       (plot (rest posn-list)
             (add-line target
-                      (convert-x (posn-x (first posn-list)))
-                      (convert-y (posn-y (first posn-list)))
-                      (convert-x (posn-x (second posn-list)))
-                      (convert-y (posn-y (second posn-list)))
+                      ((convert-x x-step) (posn-x (first posn-list)))
+                      ((convert-y y-step) (posn-y (first posn-list)))
+                      ((convert-x x-step) (posn-x (second posn-list)))
+                      ((convert-y y-step) (posn-y (second posn-list)))
                       linecolor)
-            linecolor)))
+            linecolor
+            x-step
+            y-step)))
 
 ;; plot-color :
-(define (plot-with-color posn-list target)
-  (plot (rest posn-list) target (first posn-list)))
+(define (plot-with-color x-step y-step)
+  (lambda (posn-list target)
+    (plot (rest (rest posn-list)) target (second posn-list) x-step y-step)))
 
 ;; plot2D-help : List<Posn> String String String -> Image
 (define (plot2D-help list-of-func)
-  (begin (reset-colors)
-         (set! x-step (/ SIZE (- x-max x-min)))
-         (set! y-step (/ SIZE (- y-max y-min)))
-         (if (list? list-of-func)
-             (foldl plot-with-color BG list-of-func)
-             (plot-with-color BG list-of-func))))
+  (let [(x-step (/ SIZE (- x-max x-min)))
+        (y-step (/ SIZE (- y-max y-min)))]
+    (if (list? list-of-func)
+        (foldl (plot-with-color x-step y-step) BG list-of-func)
+        ((plot-with-color x-step y-step) list-of-func BG))))
+
+;; plot-label : List -> Image
+(define (plot-label func img)
+  (above (overlay/xy (rectangle 35 1.5 "solid" (second func))
+                     -70 -9
+                     (overlay/xy (text (first func) 13 "black")
+                                 -4 -1
+                                 LABEL-BOX))
+         img))
+
+;; plot-labels : List -> Image
+(define (plot-labels list-of-func)
+  (if (list? list-of-func)
+      (foldl plot-label empty-image list-of-func)
+      (plot-label empty-image list-of-func)))
 
 (define (plot2D-axis list-of-func)
-  (let* [(plotted (add-axes (plot2D-help list-of-func)))
+  (let* [(x-step (/ SIZE (- x-max x-min)))
+         (y-step (/ SIZE (- y-max y-min)))
+         (plotted (add-axes (plot2D-help list-of-func) x-step y-step))        
          (x-values (axis x-min x-max))
          (y-values (axis y-min y-max))
-         (y-axis-marks (create-y-axis y-values))
-         (x-axis-marks (create-x-axis x-values))
+         (y-axis-marks (create-y-axis y-values y-step))
+         (x-axis-marks (create-x-axis x-values x-step))
          (marked-plot (above x-axis-marks
                              (beside y-axis-marks plotted y-axis-marks)
                              x-axis-marks))]
-         (overlay/xy 
-                       (plot-y-axis y-values)
-                       AXIS-WIDTH (- AXIS-HIGHT)
-                       (above marked-plot
-                              (plot-x-axis x-values)))))
+    (overlay/xy 
+     (plot-y-axis y-values y-step)
+     AXIS-WIDTH (- AXIS-HIGHT)
+     (above marked-plot
+            (plot-x-axis x-values x-step)))))
 
-(define (add-mark-y y img)
-  (add-line img
-            0 
-            (convert-y y)
-            10
-            (convert-y y)
-            "black"))
+(define (add-mark-y y-step)
+  (lambda(y img)
+    (add-line img
+              0 
+              ((convert-y y-step) y)
+              10
+              ((convert-y y-step) y)
+              "black")))
 
-(define (add-mark-x x img)
-  (add-line img
-            (convert-x x)
-            0
-            (convert-x x)
-            10
-            "black"))
+(define (add-mark-x x-step)
+  (lambda(x img)
+    (add-line img
+              ((convert-x x-step) x)
+              0
+              ((convert-x x-step) x)
+              10
+              "black")))
 
-(define (create-x-axis xs)
-  (foldl add-mark-x AXIS xs))
+(define (create-x-axis xs x-step)
+  (foldl (add-mark-x x-step) AXIS xs))
 
-(define (create-y-axis ys)
-  (foldl add-mark-y (rotate 90 AXIS) ys))
+(define (create-y-axis ys y-step)
+  (foldl (add-mark-y y-step) (rotate 90 AXIS) ys))
 
-(define (add-axes plots)
+(define (add-axes plots x-step y-step)
   (add-line (add-line plots
-                      (convert-x 0)
+                      ((convert-x x-step) 0)
                       0
-                      (convert-x 0)
+                      ((convert-x x-step) 0)
                       SIZE
                       "black")
             0 
-            (convert-y 0)
+            ((convert-y y-step) 0)
             SIZE
-            (convert-y 0)
+            ((convert-y y-step) 0)
             "black")) 
 
-(define (plot2D list-of-func x-label y-label title)
-  (let [(plots (overlay/xy (frame label-text) -75 -15
-                           (plot2D-axis list-of-func)))]
+;; add-line-colors : List -> List
+(define (add-line-colors f-list ready i)
+  (if (empty? f-list)
+      ready
+      (if (not (list? f-list))
+          (list (f-list i))
+          (add-line-colors (rest f-list)(cons ((first f-list) i) ready) (add1 i))))) 
+
+(define (plot2D list-of-f x-label y-label title)
+  (let* [(list-of-func (add-line-colors list-of-f '() 1))
+         (plotted-labels (plot-labels list-of-func))
+         (plots (overlay/xy (frame plotted-labels) -75 -15
+                            (plot2D-axis list-of-func)))]
     (beside (rotate 90 (text y-label FONT-SIZE "black"))
             SPACE
             (above (text title FONT-SIZE "black")
@@ -273,10 +285,11 @@
 (define (suora3 x)
   (+ (* -2 x x x) 7))
 
+(plot2D (func suora -1000 1000 "y=x^2+3") "x" "y" "otsikko")
 (plot2D (list (func suora -1000 1000 "y=x^2+3") (func suora2 -1000 1000 "y=-2x^2+7")
               (func suora3 -100 100 "y=-2x^3+7")) "x" "y" "otsikko")
 
-(define X (create-x-axis (axis x-min x-max)))
-(define Y (create-y-axis (axis y-min y-max)))
+;(define X (create-x-axis (axis x-min x-max)))
+;(define Y (create-y-axis (axis y-min y-max)))
 ;(plot-y-axis (axis y-min y-max))
 
