@@ -285,7 +285,7 @@
 (define (suora3 x)
   (+ (* -2 x x x) 7))
 
-(plot2D (func suora -1000 1000 "y=x^2+3") "x" "y" "otsikko")
+(plot2D (func suora -10 10 "y=x^2+3") "x" "y" "otsikko")
 (plot2D (list (func suora -1000 1000 "y=x^2+3") (func suora2 -1000 1000 "y=-2x^2+7")
               (func suora3 -100 100 "y=-2x^3+7")) "x" "y" "otsikko")
 
