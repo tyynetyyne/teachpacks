@@ -1,34 +1,40 @@
-;; The first three lines of this file were inserted by DrRacket. They record metadata
-;; about the language level of this file in a form that our tools can easily process.
-#reader(lib "htdp-advanced-reader.ss" "lang")((modname testing_wescheme_small_bug_error) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #t #t none #f () #f)))
+#lang racket
 (require 2htdp/image)
-(require racket/list)
-;(provide plot2D
-;         func)
-;         dots)
+(require graphics/graphics) ; make-posn
+(require test-engine/racket-tests) ; check-expect
+
+(provide plot2D ;old
+         func ;old
+         dots ;old
+         plot
+         function
+         points)
 
 ;; this is needed in WeScheme (comment out in DrRacket)
-(define (reverse-flatten-into x lst)
-  (if (not (number? x))
-      (foldl reverse-flatten-into lst x)
-      (cons x lst)))
+;(define (reverse-flatten-into x lst)
+;  (if (not (number? x))
+;      (foldl reverse-flatten-into lst x)
+;      (cons x lst)))
 
+;; this is needed in WeScheme (comment out in DrRacket)
 ;(define (flatten lst)
 ;  (reverse (reverse-flatten-into lst '())))
 
 ;; constants
 (define SIZE 400)
-(define STEPS 100)
+(define STEPS 500)
 (define BG (empty-scene SIZE SIZE))
-(define LABEL-BOX (rectangle 110 20 180 "transparent"))
+(define (label-box x)
+         (rectangle (+ (* x 8) 40) 20 180 "white"))
 (define AXIS-HEIGHT 10)
-(define AXIS (rectangle SIZE AXIS-HEIGHT "solid" "transparent"))
-(define SPACE (square 10 "solid" "transparent"))
+(define AXIS (rectangle SIZE AXIS-HEIGHT 0 "transparent"))
+(define SPACE (square 10 0 "transparent"))
 (define FONT-SIZE 20)
 (define FONT-SIZE-AXIS 15)
 (define AXIS-WIDTH 60)
 (define FUNC 1)
-(define DOTS 2)
+(define DOTS-SOLID 2)
+(define DOTS-OPEN 3)
 (define DOT-SIZE 3)
 
 (define (convert i)
@@ -36,6 +42,12 @@
         [(= i 2) "red"]
         [(= i 3) "green"]
         [(= i 4) "orange"]
+        [(= i 5) "pink"]
+        [(= i 6) "brown"]
+        [(= i 7) "violet"]
+        [(= i 8) "purple"]
+        [(= i 9) "cyan"]
+        [(= i 10) "lightgreen"]
         [else "black"]))
 
 ;;-----------------------------------------------------------------------------
@@ -111,21 +123,29 @@
 (define (label t)
   (text (number->string (exact->inexact t)) FONT-SIZE-AXIS "black"))
 
-;; shift-axis : Number -> Number
-(define (shift-axis x)
-    (+ x (/ FONT-SIZE-AXIS 2)))
+;; shift-axis-x : Number -> Number
+(define (shift-axis-x x)
+    (+ x FONT-SIZE-AXIS))
+
+;; shift-axis-y : Number -> Number
+(define (shift-axis-y y)
+    (+ y FONT-SIZE-AXIS))
 
 ;; plot-x-axis : List<Number> -> Image
 (define (plot-x-axis xs x-step x-min)
-  (foldl place-image (rectangle (+ SIZE FONT-SIZE-AXIS) (+ FONT-SIZE-AXIS 5) 0 "transparent")
-         (map label xs) (map shift-axis 
-                             (map (convert-x x-step x-min) xs))
-                             (make-list (length xs)(+ 5 (/ FONT-SIZE-AXIS 2) ))))  
+  (foldl place-image (rectangle (+ SIZE (* 2 FONT-SIZE-AXIS)) 
+                                (+ FONT-SIZE-AXIS 5) 0 
+                                "transparent")
+         (map label xs) (map shift-axis-x (map (convert-x x-step x-min) xs))
+         (make-list (length xs)(+ 5 (/ FONT-SIZE-AXIS 2)))))  
 
 ;; plot-y-axis : List<Number> -> Image
 (define (plot-y-axis ys y-step y-min)
-  (foldl place-image (rectangle AXIS-WIDTH (+ SIZE FONT-SIZE-AXIS) 0 "transparent")
-         (map label ys)  (make-list (length ys) (/ AXIS-WIDTH 2)) (map (convert-y y-step y-min) ys)))  
+  (foldl place-image (rectangle AXIS-WIDTH 
+                                (+ SIZE (* 2 FONT-SIZE-AXIS)) 0 
+                                "transparent")
+         (map label ys) (make-list (length ys) (/ AXIS-WIDTH 2))
+         (map shift-axis-y (map (convert-y y-step y-min) ys))))  
 
 ;; -------------------------------------------------------------------
 ;; func : Function Number Number String -> Function
@@ -137,14 +157,44 @@
            (linecolor (convert l-color))]           
         (cons FUNC (cons label (cons linecolor (map make-posn x y)))))))
 
+;; function : Function Number Number String -> Function
+(define (function f start end linecolor label)
+  (lambda (_count) ;not used here for anything
+    (let* [(step (/ (- end start) STEPS))
+           (x (range start (+ end step) step))
+           (y (map f x))]           
+        (cons FUNC (cons label (cons linecolor (map make-posn x y)))))))
+
+;; convert-data : List<posn/list/vector> -> List<posn>
+(define (convert-data list-data)
+  (if (vector? (first list-data))
+      (let [(l-data (map vector->list list-data))]
+        (map make-posn (map first l-data)(map second l-data)))
+      (if (list? (first list-data))
+          (map make-posn (map first list-data)(map second list-data))
+          list-data)))
+      
 ;; dots : Number Number String -> Function
-(define (dots posns start-x end-x start-y end-y label)
+(define (dots list-data start-x end-x start-y end-y label)
   (lambda (l-color)
-    (let* [(linecolor (convert l-color))]           
-        (cons DOTS (cons label (cons linecolor (cons (make-posn start-x start-y)
+    (let [(linecolor (convert l-color))
+          (posns (convert-data list-data))]           
+        (cons DOTS-OPEN (cons label (cons linecolor (cons (make-posn start-x start-y)
                                                     (cons (make-posn end-x end-y)
                                                           posns))))))))
-                                                
+
+;; points : Number Number String -> Function
+(define (points list-data start-x end-x start-y end-y point-color point-type label)
+  (lambda (_count) ;not used here for anything
+   (let [(posns (convert-data list-data))]           
+     (if (string=? point-type "solid")
+         (cons DOTS-SOLID (cons label (cons point-color (cons (make-posn start-x start-y)
+                                                              (cons (make-posn end-x end-y)
+                                                                    posns)))))
+         (cons DOTS-OPEN (cons label (cons point-color (cons (make-posn start-x start-y)
+                                                             (cons (make-posn end-x end-y)
+                                                                   posns)))))))))
+
 ;; convert-y : Number Number -> Number
 (define (convert-y y-step y-min)
   (lambda (y)
@@ -155,12 +205,12 @@
   (lambda (x)
     (* x-step (- x x-min))))
 
-;; plot : List<Posn> Image Color -> Image
-(define (plot posn-list target linecolor x-step y-step x-min x-max y-min y-max)
+;; plot-help : List<Posn> Image Color -> Image
+(define (plot-help posn-list target linecolor x-step y-step x-min x-max y-min y-max)
   (if (or (empty? posn-list)
           (< (length posn-list) 2))
       target
-      (plot (rest posn-list)
+      (plot-help (rest posn-list)
             (add-line target
                       ((convert-x x-step x-min) (posn-x (first posn-list)))
                       ((convert-y y-step y-min) (posn-y (first posn-list)))
@@ -169,23 +219,23 @@
                       linecolor)
             linecolor x-step y-step x-min x-max y-min y-max)))
 
-;; plot-dots : List<Posn> Image Color -> Image
-(define (plot-dots posn-list target linecolor x-step y-step x-min x-max y-min y-max)
+;; plot-dots : List<Posn> Image Image -> Image
+(define (plot-dots posn-list target dot x-step y-step x-min x-max y-min y-max)
   (if (or (empty? posn-list)
           (< (length posn-list) 1))
       target
       (plot-dots (rest posn-list)
-            (place-image (circle DOT-SIZE "outline" linecolor) 
+            (place-image dot 
                          ((convert-x x-step x-min) (posn-x (first posn-list)))
                          ((convert-y y-step y-min) (posn-y (first posn-list)))
                          target)
-            linecolor x-step y-step x-min x-max y-min y-max)))
+            dot x-step y-step x-min x-max y-min y-max)))
 
-;; plot-color :
+;; plot-color : Number Number Number Number Number -> Function
 (define (plot-with-color x-step y-step x-min x-max y-min y-max)
   (lambda (posn-list target)
     (if (= (first posn-list) FUNC)
-        (plot (rest (rest (rest posn-list))) 
+        (plot-help (rest (rest (rest posn-list))) 
               target 
               (third posn-list) 
               x-step 
@@ -195,15 +245,15 @@
               y-min 
               y-max)
         (plot-dots (rest (rest (rest (rest (rest posn-list)))))
-              target 
-              (third posn-list) 
-              x-step 
-              y-step 
-              x-min 
-              x-max 
-              y-min 
-              y-max))))
-
+                   target 
+                   (circle DOT-SIZE (if (= (first posn-list) DOTS-SOLID) "solid" "outline") (third posn-list)) 
+                   x-step 
+                   y-step 
+                   x-min 
+                   x-max 
+                   y-min 
+                   y-max))))
+            
 ;; plot2D-help : List<Posn> String String String -> Image
 (define (plot2D-help list-of-func x-min x-max y-min y-max)
   (let [(x-step (/ SIZE (- x-max x-min)))
@@ -214,20 +264,29 @@
 
 ;; plot-label : List -> Image
 (define (plot-label func img)
-  (if (= (first func)FUNC)
-      (above (overlay/xy (rectangle 35 1.5 "solid" (third func))
-                         -70 -9
-                         (overlay/xy (text (second func) 13 "black")
-                                     -4 -1
-                                     LABEL-BOX))
-             img)
-      (above (overlay/xy (circle DOT-SIZE "outline" (third func))
-                         -70 -6
-                         (overlay/xy (text (second func) 13 "black")
-                                     -4 -1
-                                     LABEL-BOX))
-             img)))
-
+  (let [(icon (if (= (first func)FUNC)
+                  (rectangle 35 1.5 "solid" (third func))
+                  (circle DOT-SIZE (if (= (first func) DOTS-SOLID) 
+                                       "solid" 
+                                       "outline") 
+                          (third func))))
+        (strlen (string-length (second func)))]
+  (if (zero? strlen)
+      img
+      (if (< strlen 10)
+          (above (overlay/xy icon
+                             -80 -8
+                             (overlay/xy (text (second func) 13 "black")
+                                         -4 -3
+                                         (label-box 10)))
+                 img)
+          (above (overlay/xy icon
+                             (- (* strlen 8)) -8
+                             (overlay/xy (text (second func) 13 "black")
+                                         -4 -3
+                                         (label-box strlen)))
+                 img)))))
+                
 ;; plot-labels : List -> Image
 (define (plot-labels list-of-func)
   (if (list? list-of-func)
@@ -237,7 +296,7 @@
 (define (plot2D-axis list-of-func x-min x-max y-min y-max)
   (let* [(x-step (/ SIZE (- x-max x-min)))
          (y-step (/ SIZE (- y-max y-min)))
-         (plotted (add-axes (plot2D-help list-of-func x-min x-max y-min y-max) x-step y-step x-min y-min))        
+         (plotted (add-axes (frame (plot2D-help list-of-func x-min x-max y-min y-max)) x-step y-step x-min y-min))        
          (x-values (axis x-min x-max))
          (y-values (axis y-min y-max))
          (y-axis-marks (create-y-axis y-values y-step y-min))
@@ -246,7 +305,7 @@
                              (beside y-axis-marks plotted y-axis-marks)
                              x-axis-marks))]
      (overlay/xy (plot-y-axis y-values y-step y-min)
-                 AXIS-WIDTH (- AXIS-HEIGHT)
+                 AXIS-WIDTH (- (- AXIS-HEIGHT FONT-SIZE-AXIS))
                  (above marked-plot
                         (plot-x-axis x-values x-step x-min)))))
 
@@ -334,14 +393,20 @@
                                                             (make-posn 10 0))))))
               40)
 
+;; plot2D : List-of-func/dots/function/points String String String -> Image
 (define (plot2D list-of-f x-label y-label title)
   (let* [(list-of-func (add-line-colors list-of-f '() 1))
          (min-x (find-min-x list-of-func))
          (min-y (find-min-y list-of-func))
          (max-x (find-max-x list-of-func))
          (max-y (find-max-y list-of-func))
-         (plotted-labels (plot-labels list-of-func))
-         (plots (overlay/xy (frame plotted-labels) -75 -15
+         (plotted-labels1 (plot-labels list-of-func))
+         (plotted-labels (overlay plotted-labels1
+                                 (rectangle (image-width plotted-labels1)
+                                            (image-height plotted-labels1)
+                                            180
+                                            "white")))
+         (plots (overlay/xy (frame plotted-labels) -80 -20
                             (plot2D-axis list-of-func min-x max-x min-y max-y)))
          (plots-f (overlay plots
                                (rectangle (+ (image-width plots)(* 8 AXIS-HEIGHT))
@@ -365,26 +430,7 @@
                                            (+ x-middle x-offset) 
                                            (* 2 AXIS-HEIGHT)
                                            plots-f)))))          
-           
-;;--------------------------------------------------------------------
-;; testing
-(define (plot1 x)
-  (+ (* -2 x) -3))
 
-(define (plot2 x)
-  (+ (* -2 x x) 7))
-
-(define (plot3 x)
-  (+ (* -2 x x x) 7))
-
-(define p1 (list (make-posn 0 0)(make-posn 100 200)(make-posn 200 300)(make-posn 300 400)))
-;(plot2D (dots p1 0 10 0 10 "p1") "x" "y" "tekstiä")
-
-(plot2D (func plot1 -0.1 0.1 "y=x^2+3") "x" "y" "this is working")  ; OK
-
-;(plot2D (func plot1 -100 100 "y=x^2+3") "x" "y" "this is not working")  ; NOT OK
-
-;(plot2D (list (func plot1 -100 100 "y=x^2+3") (func plot2 -100 100 "y=-2x^2+7")
-;             (dots p1 0 10 0 10 "p1") ) "x" "y" "title1")
-
-;(plot2D (func sin (- pi) pi "sin(x)") "x" "y" "title2")
+;; plot : List-of-func/dots/function/points String String String -> Image
+(define (plot list-of-f x-label y-label title)
+  (plot2D list-of-f x-label y-label title))
