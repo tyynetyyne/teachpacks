@@ -1,6 +1,7 @@
 #lang racket
 (require 2htdp/image)
-(require graphics/graphics) ; make-posn
+;(require graphics/graphics) ; make-posn
+(require lang/posn) ; make-posn
 (require test-engine/racket-tests) ; check-expect
 
 (provide plot2D ;old
