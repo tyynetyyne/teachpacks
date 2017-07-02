@@ -380,18 +380,18 @@
             (apply min (get-y-list list-of-func))
             (apply min (flatten (map get-y-list list-of-func)))))
 
-(check-expect (find-max-x (list (cons "label" (cons 3 (list (make-posn 2 3)
-                                                            (make-posn 4 5)
-                                                            (make-posn 10 0))))))
-              10)
-
-(check-expect (find-max-x (list (cons "label" (cons 3 (list (make-posn 2 3)
-                                                            (make-posn 4 5)
-                                                            (make-posn 10 0))))
-                                (cons "label" (cons 3 (list (make-posn 2 3)
-                                                            (make-posn 40 5)
-                                                            (make-posn 10 0))))))
-              40)
+;(check-expect (find-max-x (list (cons "label" (cons 3 (list (make-posn 2 3)
+;                                                            (make-posn 4 5)
+;                                                            (make-posn 10 0))))))
+;              10)
+;
+;(check-expect (find-max-x (list (cons "label" (cons 3 (list (make-posn 2 3)
+;                                                            (make-posn 4 5)
+;                                                            (make-posn 10 0))))
+;                                (cons "label" (cons 3 (list (make-posn 2 3)
+;                                                            (make-posn 40 5)
+;                                                            (make-posn 10 0))))))
+;              40)
 
 ;; plot2D : List-of-func/dots/function/points String String String -> Image
 (define (plot2D list-of-f x-label y-label title)
