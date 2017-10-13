@@ -11,7 +11,12 @@
          function
          points
          labeled-points
-         plot-with-axes)
+         plot-with-axes
+         bar-chart
+         serie
+         lines
+         lines-labeled-points
+         images)
 
 ;; this is needed in WeScheme (comment out in DrRacket)
 ;(define (reverse-flatten-into x lst)
@@ -41,6 +46,12 @@
 (define DOTS-OPEN-SHOW 4)
 (define DOTS-OPEN 5)
 (define SERIE 6)
+(define LINE-DOTS-SOLID-SHOW 7)
+(define LINE-DOTS-SOLID 8)
+(define LINE-DOTS-OPEN-SHOW 9)
+(define LINE-DOTS-OPEN 10)
+(define LINE 11)
+(define IMAGE 12)
 (define DOT-SIZE 3)
 (define SERIE-GAP 10)
 (define GAP 5)
@@ -176,12 +187,19 @@
 
 ;; convert-data : List<posn/list/vector> -> List<posn>
 (define (convert-data list-data)
-  (if (vector? (first list-data))
-      (let [(l-data (map vector->list list-data))]
-        (map make-posn (map first l-data)(map second l-data)))
-      (if (list? (first list-data))
-          (map make-posn (map first list-data)(map second list-data))
-          list-data)))
+  (cond [(and (list? list-data)
+              (vector? (first list-data)))
+         (let [(l-data (map vector->list list-data))]
+           (map make-posn (map first l-data)(map second l-data)))]
+        [(posn? list-data) 
+         (list list-data)]
+        [(and (list? list-data)(posn? (first list-data)))
+         list-data]
+        [(and (list? list-data) (not (list? (first list-data))))
+         (list (make-posn (first list-data)(second list-data)))]
+        [(list? (first list-data))
+             (map make-posn (map first list-data)(map second list-data))]
+        [else list-data]))
 
 ;; convert-values : List -> List<posn>
 (define (convert-values list-data)
@@ -199,32 +217,58 @@
                                                           posns))))))))
 
 ;; points-help : Number Number String -> Function
-(define (points-help list-data start-x end-x start-y end-y point-color point-type label show?)
+(define (points-help list-data start-x end-x start-y end-y point-color point-type label show? line?)
   (lambda (_count) ;not used here for anything
    (let [(posns (convert-data list-data))]           
-     (cond[(and (string=? point-type "solid") show?)
+     (cond [(image? point-type)   ; image stored in point-type
+           (cons IMAGE (cons label (cons point-type (cons (make-posn start-x start-y)
+                                                                   (cons (make-posn end-x end-y)
+                                                                    posns)))))] 
+           [(and (string? point-type)(string=? point-type "solid") show? line?)
+            (cons LINE-DOTS-SOLID-SHOW (cons label (cons point-color (cons (make-posn start-x start-y)
+                                                                   (cons (make-posn end-x end-y)
+                                                                    posns)))))]
+          [(and (string? point-type)(string=? point-type "solid") show?)
            (cons DOTS-SOLID-SHOW (cons label (cons point-color (cons (make-posn start-x start-y)
                                                                    (cons (make-posn end-x end-y)
                                                                     posns)))))]
-          [(string=? point-type "solid")
+          [(and (string? point-type)(string=? point-type "solid") line?)
+           (cons LINE-DOTS-SOLID (cons label (cons point-color (cons (make-posn start-x start-y)
+                                                                   (cons (make-posn end-x end-y)
+                                                                    posns)))))]
+          [(and (string? point-type)(string=? point-type "solid"))
            (cons DOTS-SOLID (cons label (cons point-color (cons (make-posn start-x start-y)
                                                                 (cons (make-posn end-x end-y)
                                                                       posns)))))]
-          [(and (string=? point-type "outline") show?)
+          [(and (string? point-type)(string=? point-type "outline") show? line?)
+           (cons LINE-DOTS-OPEN-SHOW (cons label (cons point-color (cons (make-posn start-x start-y)
+                                                                   (cons (make-posn end-x end-y)
+                                                                    posns)))))]          
+          [(and (string? point-type)(string=? point-type "outline") line?)
+           (cons LINE-DOTS-OPEN (cons label (cons point-color (cons (make-posn start-x start-y)
+                                                                   (cons (make-posn end-x end-y)
+                                                                    posns)))))]
+           [(and (string? point-type)(string=? point-type "outline") show?)
            (cons DOTS-OPEN-SHOW (cons label (cons point-color (cons (make-posn start-x start-y)
                                                                    (cons (make-posn end-x end-y)
                                                                     posns)))))]          
-          [else (cons DOTS-OPEN (cons label (cons point-color (cons (make-posn start-x start-y)
+
+          [(and (string? point-type)(string=? point-type "outline"))
+           (cons DOTS-OPEN (cons label (cons point-color (cons (make-posn start-x start-y)
+                                                                    (cons (make-posn end-x end-y)
+                                                                          posns)))))]
+          [else
+           (cons LINE (cons label (cons point-color (cons (make-posn start-x start-y)
                                                                     (cons (make-posn end-x end-y)
                                                                           posns)))))]))))
 
 ;; points : Number Number String Boolean -> Function
 (define (points list-data start-x end-x start-y end-y point-color point-type label)
-  (points-help list-data start-x end-x start-y end-y point-color point-type label #f))
+  (points-help list-data start-x end-x start-y end-y point-color point-type label #f #f))
 
 ;; labeled-points : Number Number String Boolean -> Function
 (define (labeled-points list-data start-x end-x start-y end-y point-color point-type label)
-  (points-help list-data start-x end-x start-y end-y point-color point-type label #t))
+  (points-help list-data start-x end-x start-y end-y point-color point-type label #t #f))
 
 ;; convert-y : Number Number -> Number
 (define (convert-y y-step y-min)
@@ -285,32 +329,85 @@
 ;; plot-color : Number Number Number Number Number -> Function
 (define (plot-with-color x-step y-step x-min x-max y-min y-max)
   (lambda (posn-list target)
-    (if (= (first posn-list) FUNC)
-        (plot-help (rest (rest (rest posn-list))) 
-              target 
-              (third posn-list) 
-              x-step 
-              y-step 
-              x-min 
-              x-max 
-              y-min 
-              y-max)
-        (plot-dots (rest (rest (rest (rest (rest posn-list)))))
-                   target 
-                   (circle DOT-SIZE (if (or (= (first posn-list) DOTS-SOLID)
-                                            (= (first posn-list) DOTS-SOLID-SHOW))
-                                            "solid"
-                                            "outline")
-                           (third posn-list)) 
-                   x-step 
-                   y-step 
-                   x-min 
-                   x-max 
-                   y-min 
-                   y-max
-                   (or (= (first posn-list) DOTS-SOLID-SHOW)
-                       (= (first posn-list) DOTS-OPEN-SHOW))))))
-            
+    (cond [(= (first posn-list) IMAGE)
+           (plot-dots (rest (rest (rest (rest (rest posn-list)))))
+                      target 
+                      (third posn-list) 
+                      x-step 
+                      y-step 
+                      x-min 
+                      x-max 
+                      y-min 
+                      y-max
+                      #f)]
+          [(= (first posn-list) FUNC)
+           (plot-help (rest (rest (rest posn-list))) 
+                      target 
+                      (third posn-list) 
+                      x-step 
+                      y-step 
+                      x-min 
+                      x-max 
+                      y-min 
+                      y-max)]
+          [(or (= (first posn-list) DOTS-SOLID)
+               (= (first posn-list) DOTS-SOLID-SHOW)
+               (= (first posn-list) DOTS-OPEN)
+               (= (first posn-list) DOTS-OPEN-SHOW))
+           (plot-dots (rest (rest (rest (rest (rest posn-list)))))
+                      target 
+                      (circle DOT-SIZE (if (or (= (first posn-list) DOTS-SOLID)
+                                               (= (first posn-list) DOTS-SOLID-SHOW))
+                                           "solid"
+                                           "outline")
+                              (third posn-list)) 
+                      x-step 
+                      y-step 
+                      x-min 
+                      x-max 
+                      y-min 
+                      y-max
+                      (or (= (first posn-list) DOTS-SOLID-SHOW)
+                          (= (first posn-list) DOTS-OPEN-SHOW)))]
+          [(or (= (first posn-list) LINE-DOTS-SOLID)
+               (= (first posn-list) LINE-DOTS-SOLID-SHOW)
+               (= (first posn-list) LINE-DOTS-OPEN)
+               (= (first posn-list) LINE-DOTS-OPEN-SHOW))
+           (let [(plotted-dots (plot-dots (rest (rest (rest (rest (rest posn-list)))))
+                                          target 
+                                          (circle DOT-SIZE (if (or (= (first posn-list) LINE-DOTS-SOLID)
+                                                                   (= (first posn-list) LINE-DOTS-SOLID-SHOW))
+                                                               "solid"
+                                                               "outline")
+                                                  (third posn-list)) 
+                                          x-step 
+                                          y-step 
+                                          x-min 
+                                          x-max 
+                                          y-min 
+                                          y-max
+                                          (or (= (first posn-list) LINE-DOTS-SOLID-SHOW)
+                                              (= (first posn-list) LINE-DOTS-OPEN-SHOW))))]
+              (plot-help (rest (rest (rest (rest (rest posn-list))))) ;remove the min and max points 
+                      plotted-dots 
+                      (third posn-list) 
+                      x-step 
+                      y-step 
+                      x-min 
+                      x-max 
+                      y-min 
+                      y-max))]
+          ;; LINE:
+          [else (plot-help (rest (rest (rest (rest (rest posn-list))))) ;remove the min and max
+                           target 
+                           (third posn-list) 
+                           x-step 
+                           y-step 
+                           x-min 
+                           x-max 
+                           y-min 
+                           y-max)])))
+             
 ;; plot2D-help : List<Posn> String String String -> Image
 (define (plot2D-help list-of-func x-min x-max y-min y-max)
   (let [(x-step (/ SIZE (- x-max x-min)))
@@ -321,7 +418,14 @@
 
 ;; plot-label : List -> Image
 (define (plot-label func img)
-  (let [(icon (cond [(= (first func)FUNC)
+  (let [(icon (cond [(= (first func) IMAGE)
+                     empty-image]
+                    [(or (= (first func)FUNC)
+                         (= (first func) LINE-DOTS-SOLID)
+                         (= (first func) LINE-DOTS-SOLID-SHOW)
+                         (= (first func) LINE-DOTS-OPEN)
+                         (= (first func) LINE-DOTS-OPEN-SHOW)
+                         (= (first func) LINE))
                      (rectangle 35 1.5 "solid" (third func))]
                     [(= (first func) SERIE)
                      (square (* 2 DOT-SIZE) "solid" (third func))]
@@ -702,7 +806,7 @@
              (map length (map fourth list-of-func))))
 
 ;; bar-chart : Serie/List-of-serie List<String/Number> String String Boolean -> Image
-(define (plot-bars list-of-series label-data y-min y-max x-label y-label title vertical?)
+(define (bar-chart list-of-series label-data y-min y-max x-label y-label title vertical?)
   (let [(list-of-func (add-line-colors list-of-series '() 1))]
     (if (data-ok? list-of-func label-data)
             (let* [(number-of-bars (count-bars list-of-func))
@@ -765,18 +869,12 @@
   (lambda(_count); not used
     (cons SERIE (cons label (cons color (cons list-of-data '()))))))
 
-(plot-bars (list (serie (list -1 2 -3 4 6) "red" "7A-lista")
-                 (serie (list 1 5 0 -2 5) "blue" "7B-lista")
-                  (serie (list 1 5 0 -2 5) "black" "7B-lista")
+(define (lines list-data start-x end-x start-y end-y color point-type label)
+          (points-help list-data start-x end-x start-y end-y color point-type label #f #t))
+    
+(define (lines-labeled-points list-data start-x end-x start-y end-y color point-type label)
+      (points-help list-data start-x end-x start-y end-y color point-type label #t #t))
+ 
+(define (images list-data start-x end-x start-y end-y image)
+  (points-help list-data start-x end-x start-y end-y "transparent" image "" #f #f))
 
-                   (serie (list 1 5 0 -2 5) "violet" "7B-lista")
-
-            ;    (list 10 5 3 1 3) "green" "7C-lista"))
-                        (serie (list -1 2 -3 4 6) "green" "7C"))
-                         (list "Jregeggeg" "Jwegege" "Kewgrgewg" "Swegeg" "Hwegege")
-                         -3
-                         11
-                         "x-teksti"
-                         "y-teksti"
-                         "koko teksti"
-                         #f)
