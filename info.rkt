@@ -2,7 +2,7 @@
 
 (define collection "teachpacks")
 
-(define version 0.5)
+(define version "0.5")
 
 (define deps '("gui-lib"
                "base" "htdp-lib" "plot-gui-lib" "plot-lib"))
